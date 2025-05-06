@@ -99,16 +99,15 @@ class ChatProvider extends ChangeNotifier {
             return ChatMessage(
               text: msg['content'],
               isUser: msg['role'] == 'user',
-              imagePath: null, // API doesn't provide image path
-              isSearch: false, // API doesn't provide search flag
+              imagePath: null,
+              isSearch: false,
             );
           }).toList();
 
-          // Convert chat ID to string for consistency
           final chatId = chat['id'].toString();
           return Chat(
             id: chatId,
-            title: 'Chat $chatId', // You might want to generate a title based on first message
+            title: 'Chat $chatId',
             createdAt: DateTime.parse(chat['created_at']),
             messages: messages,
           );
@@ -130,6 +129,133 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  void _updateChatWithResponse(Map<String, dynamic> response) {
+    if (response['status'] != 'success') {
+      throw Exception(response['message'] ?? 'Failed to process request');
+    }
+
+    final conversationId = response['conversation_id']?.toString();
+    if (conversationId == null) {
+      throw Exception('Invalid response format: missing conversation_id');
+    }
+
+    final history = response['history'] as List;
+    if (history.isEmpty) {
+      throw Exception('Invalid response format: empty history');
+    }
+
+    final messages = history.map((msg) {
+      return ChatMessage(
+        text: msg['content'],
+        isUser: msg['role'] == 'user',
+        imagePath: null,
+        isSearch: false,
+      );
+    }).toList();
+
+    // Update or create chat with the new conversation
+    final existingChatIndex = _chats.indexWhere((chat) => chat.id == conversationId);
+    if (existingChatIndex >= 0) {
+      _chats[existingChatIndex] = _chats[existingChatIndex].copyWith(
+        messages: messages,
+      );
+    } else {
+      _chats.add(Chat(
+        id: conversationId,
+        title: 'Chat $conversationId',
+        messages: messages,
+      ));
+    }
+
+    _currentChatId = conversationId;
+    notifyListeners();
+  }
+
+  Future<Map<String, dynamic>?> sendMessage(String message) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final currentChat = this.currentChat;
+      if (currentChat == null) {
+        await createNewChat();
+        return null;
+      }
+
+      final response = await _apiService.sendMessage(
+        message,
+        conversationId: int.tryParse(currentChat.id),
+      );
+
+      _updateChatWithResponse(response);
+      _isLoading = false;
+      return response;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> performSearch(String query) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final currentChat = this.currentChat;
+      if (currentChat == null) {
+        await createNewChat();
+        return null;
+      }
+
+      final response = await _apiService.sendMessage(
+        query,
+        isSearch: true,
+        conversationId: int.tryParse(currentChat.id),
+      );
+
+      _updateChatWithResponse(response);
+      _isLoading = false;
+      return response;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> analyzeImage(String imagePath) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final currentChat = this.currentChat;
+      if (currentChat == null) {
+        await createNewChat();
+        return null;
+      }
+
+      final response = await _apiService.sendImage(
+        imagePath,
+        conversationId: int.tryParse(currentChat.id),
+      );
+
+      _updateChatWithResponse(response);
+      _isLoading = false;
+      return response;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<void> createNewChat() async {
     _isLoading = true;
     _error = null;
@@ -137,16 +263,11 @@ class ChatProvider extends ChangeNotifier {
 
     try {
       final response = await _apiService.sendMessage('Start new chat');
-      final newChat = Chat(
-        id: response['chat_id'].toString(),
-        title: 'New Chat',
-        messages: [],
-      );
-
-      _chats = [..._chats, newChat];
-      _currentChatId = newChat.id;
-      _isLoading = false;
-      notifyListeners();
+      if (response['status'] == 'success') {
+        _updateChatWithResponse(response);
+      } else {
+        throw Exception('Failed to create new chat: ${response['message']}');
+      }
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
@@ -190,64 +311,6 @@ class ChatProvider extends ChangeNotifier {
       return chat;
     }).toList();
     notifyListeners();
-  }
-
-  Future<void> addMessage(ChatMessage message) async {
-    final currentChat = this.currentChat;
-    if (currentChat == null) {
-      await createNewChat();
-      return;
-    }
-
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
-    try {
-      final response = message.imagePath != null
-          ? await _apiService.sendImage(
-              message.imagePath!,
-              conversationId: int.tryParse(currentChat.id),
-            )
-          : await _apiService.sendMessage(
-              message.text,
-              isSearch: message.isSearch,
-              conversationId: int.tryParse(currentChat.id),
-            );
-
-      if (response['status'] == 'success') {
-        final data = response['data'];
-        _chats = _chats.map((chat) {
-          if (chat.id == currentChat.id) {
-            final messages = (data['history'] as List).map((msg) {
-              return ChatMessage(
-                text: msg['content'],
-                isUser: msg['role'] == 'user',
-                imagePath: null,
-                isSearch: false,
-              );
-            }).toList();
-
-            return chat.copyWith(
-              id: data['id'].toString(),
-              messages: messages,
-            );
-          }
-          return chat;
-        }).toList();
-
-        _currentChatId = data['id'].toString();
-      } else {
-        throw Exception(response['message'] ?? 'Failed to send message');
-      }
-
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
-    }
   }
 
   Future<void> clearCurrentChat() async {

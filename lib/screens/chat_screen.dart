@@ -4,7 +4,6 @@ import 'package:chatbot_lini/providers/chat_provider.dart';
 import 'package:chatbot_lini/providers/auth_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'dart:convert';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -39,31 +38,42 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_messageController.text.trim().isEmpty) return;
 
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-    await chatProvider.addMessage(
-      ChatMessage(
-        text: _messageController.text.trim(),
-        isUser: true,
-      ),
-    );
-
+    final userMessage = _messageController.text.trim();
     _messageController.clear();
-    _scrollToBottom();
+
+    try {
+      // Send message and wait for response
+      final response = await chatProvider.sendMessage(userMessage);
+      if (response != null && response['status'] == 'success') {
+        // The ChatProvider will handle updating the entire conversation
+        // We just need to scroll to bottom after the update
+        _scrollToBottom();
+      }
+    } catch (e) {
+      // Error is handled by ChatProvider
+      _scrollToBottom();
+    }
   }
 
   Future<void> _performWebSearch() async {
     if (_messageController.text.trim().isEmpty) return;
 
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-    await chatProvider.addMessage(
-      ChatMessage(
-        text: _messageController.text.trim(),
-        isUser: true,
-        isSearch: true,
-      ),
-    );
-
+    final searchQuery = _messageController.text.trim();
     _messageController.clear();
-    _scrollToBottom();
+
+    try {
+      // Perform search and wait for response
+      final response = await chatProvider.performSearch(searchQuery);
+      if (response != null && response['status'] == 'success') {
+        // The ChatProvider will handle updating the entire conversation
+        // We just need to scroll to bottom after the update
+        _scrollToBottom();
+      }
+    } catch (e) {
+      // Error is handled by ChatProvider
+      _scrollToBottom();
+    }
   }
 
   Future<void> _pickImage() async {
@@ -71,31 +81,19 @@ class _ChatScreenState extends State<ChatScreen> {
     if (image == null) return;
 
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-    await chatProvider.addMessage(
-      ChatMessage(
-        text: 'Analyze this image',
-        isUser: true,
-        imagePath: image.path,
-      ),
-    );
 
-    _scrollToBottom();
-  }
-
-  String _extractLatestResponse(String response) {
     try {
-      // Try to parse as JSON first
-      final jsonResponse = json.decode(response);
-      if (jsonResponse is Map && jsonResponse.containsKey('assistant_response')) {
-        return jsonResponse['assistant_response'];
-      } else if (jsonResponse is Map && jsonResponse.containsKey('response')) {
-        return jsonResponse['response'];
+      // Send image and wait for response
+      final response = await chatProvider.analyzeImage(image.path);
+      if (response != null && response['status'] == 'success') {
+        // The ChatProvider will handle updating the entire conversation
+        // We just need to scroll to bottom after the update
+        _scrollToBottom();
       }
     } catch (e) {
-      // If not JSON, return the response as is
-      return response;
+      // Error is handled by ChatProvider
+      _scrollToBottom();
     }
-    return response;
   }
 
   @override
@@ -178,10 +176,6 @@ class _ChatScreenState extends State<ChatScreen> {
               itemCount: chatProvider.currentChat?.messages.length ?? 0,
               itemBuilder: (context, index) {
                 final message = chatProvider.currentChat!.messages[index];
-                final displayText = message.isUser 
-                    ? message.text 
-                    : _extractLatestResponse(message.text);
-                
                 return Align(
                   alignment: message.isUser
                       ? Alignment.centerRight
@@ -214,7 +208,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         if (message.imagePath != null)
                           const SizedBox(height: 8),
                         SelectableText(
-                          displayText,
+                          message.text,
                           style: TextStyle(
                             color: message.isUser
                                 ? Colors.white
