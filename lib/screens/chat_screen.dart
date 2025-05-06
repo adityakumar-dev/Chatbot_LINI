@@ -4,6 +4,7 @@ import 'package:chatbot_lini/providers/chat_provider.dart';
 import 'package:chatbot_lini/providers/auth_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:convert';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -79,6 +80,22 @@ class _ChatScreenState extends State<ChatScreen> {
     );
 
     _scrollToBottom();
+  }
+
+  String _extractLatestResponse(String response) {
+    try {
+      // Try to parse as JSON first
+      final jsonResponse = json.decode(response);
+      if (jsonResponse is Map && jsonResponse.containsKey('assistant_response')) {
+        return jsonResponse['assistant_response'];
+      } else if (jsonResponse is Map && jsonResponse.containsKey('response')) {
+        return jsonResponse['response'];
+      }
+    } catch (e) {
+      // If not JSON, return the response as is
+      return response;
+    }
+    return response;
   }
 
   @override
@@ -161,6 +178,10 @@ class _ChatScreenState extends State<ChatScreen> {
               itemCount: chatProvider.currentChat?.messages.length ?? 0,
               itemBuilder: (context, index) {
                 final message = chatProvider.currentChat!.messages[index];
+                final displayText = message.isUser 
+                    ? message.text 
+                    : _extractLatestResponse(message.text);
+                
                 return Align(
                   alignment: message.isUser
                       ? Alignment.centerRight
@@ -193,7 +214,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         if (message.imagePath != null)
                           const SizedBox(height: 8),
                         SelectableText(
-                          message.text,
+                          displayText,
                           style: TextStyle(
                             color: message.isUser
                                 ? Colors.white
