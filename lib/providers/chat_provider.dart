@@ -216,10 +216,10 @@ class ChatProvider extends ChangeNotifier {
             );
 
       if (response['status'] == 'success') {
-        final data = response['data'];
+        // Update the chat with the complete history from the server
         _chats = _chats.map((chat) {
           if (chat.id == currentChat.id) {
-            final messages = (data['history'] as List).map((msg) {
+            final messages = (response['history'] as List).map((msg) {
               return ChatMessage(
                 text: msg['content'],
                 isUser: msg['role'] == 'user',
@@ -229,14 +229,14 @@ class ChatProvider extends ChangeNotifier {
             }).toList();
 
             return chat.copyWith(
-              id: data['id'].toString(),
+              id: response['conversation_id'].toString(),
               messages: messages,
             );
           }
           return chat;
         }).toList();
 
-        _currentChatId = data['id'].toString();
+        _currentChatId = response['conversation_id'].toString();
       } else {
         throw Exception(response['message'] ?? 'Failed to send message');
       }

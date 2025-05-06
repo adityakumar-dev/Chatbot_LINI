@@ -23,13 +23,13 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('user_id');
-    if (userId != null) {
-      context.go('/chat');
-    } else {
+    // final prefs = await SharedPreferences.getInstance();
+    // final userId = prefs.getInt('user_id');
+    // if (userId != null) {
+    //   context.go('/chat');
+    // } else {
       context.go('/login');
-    }
+    // }
   }
 
   @override
