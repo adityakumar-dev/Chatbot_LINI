@@ -153,7 +153,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> sendImage(String imagePath, {int? conversationId}) async {
+  Future<Map<String, dynamic>> sendImage(String imagePath, {int? conversationId, String? prompt}) async {
     try {
       final userId = _prefs.getInt(_userIdKey);
       if (userId == null) {
@@ -168,7 +168,7 @@ class ApiService {
       request.headers.addAll(_headers);
       request.fields.addAll({
         'user_id': userId.toString(),
-        'prompt': 'Analyze this image',
+        'prompt': prompt ?? 'Analyze this image',
         'is_search': 'false',
       });
 

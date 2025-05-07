@@ -36,19 +36,25 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
-
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    if (_messageController.text.trim().isEmpty && chatProvider.selectedImagePath == null) return;
+
     final userMessage = _messageController.text.trim();
     _messageController.clear();
 
     try {
-      // Send message and wait for response
-      final response = await chatProvider.sendMessage(userMessage);
-      if (response != null && response['status'] == 'success') {
-        // The ChatProvider will handle updating the entire conversation
-        // We just need to scroll to bottom after the update
-        _scrollToBottom();
+      if (chatProvider.selectedImagePath != null) {
+        // Send image with optional prompt
+        final response = await chatProvider.analyzeImage(chatProvider.selectedImagePath!, userMessage);
+        if (response != null && response['status'] == 'success') {
+          _scrollToBottom();
+        }
+      } else {
+        // Send text message
+        final response = await chatProvider.sendMessage(userMessage);
+        if (response != null && response['status'] == 'success') {
+          _scrollToBottom();
+        }
       }
     } catch (e) {
       // Error is handled by ChatProvider
@@ -82,19 +88,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (image == null) return;
 
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-
-    try {
-      // Send image and wait for response
-      final response = await chatProvider.analyzeImage(image.path);
-      if (response != null && response['status'] == 'success') {
-        // The ChatProvider will handle updating the entire conversation
-        // We just need to scroll to bottom after the update
-        _scrollToBottom();
-      }
-    } catch (e) {
-      // Error is handled by ChatProvider
-      _scrollToBottom();
-    }
+    chatProvider.setSelectedImage(image.path);
   }
 
   @override
@@ -105,15 +99,34 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(chatProvider.currentChat?.title ?? 'New Chat'),
+        title: Row(
+          children: [
+            Icon(
+              Icons.health_and_safety,
+              color: theme.colorScheme.primary,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              chatProvider.currentChat?.title ?? 'Health Assistant',
+              style: TextStyle(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(Icons.medical_services),
             onPressed: () => context.go('/voice'),
+            color: theme.colorScheme.primary,
           ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => authProvider.logout(),
+            color: theme.colorScheme.primary,
           ),
         ],
       ),
@@ -122,7 +135,14 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.primary.withOpacity(0.8),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,11 +150,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: Colors.white,
-                    child: Text(
-                      authProvider.username?[0].toUpperCase() ?? 'U',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        color: theme.colorScheme.primary,
-                      ),
+                    child: Icon(
+                      Icons.person,
+                      size: 30,
+                      color: theme.colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -142,14 +161,15 @@ class _ChatScreenState extends State<ChatScreen> {
                     authProvider.username ?? 'User',
                     style: theme.textTheme.titleLarge?.copyWith(
                       color: Colors.white,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.add),
-              title: const Text('New Chat'),
+              leading: const Icon(Icons.add_circle_outline),
+              title: const Text('New Consultation'),
               onTap: () {
                 chatProvider.createNewChat();
                 Navigator.pop(context);
@@ -157,7 +177,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const Divider(),
             ...chatProvider.chats.map((chat) => ListTile(
-                  leading: const Icon(Icons.chat_bubble_outline),
+                  leading: const Icon(Icons.medical_information),
                   title: Text(chat.title),
                   selected: chat.id == chatProvider.currentChatId,
                   onTap: () {
@@ -171,106 +191,196 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: chatProvider.currentChat?.messages.length ?? 0,
-              itemBuilder: (context, index) {
-                final message = chatProvider.currentChat!.messages[index];
-                return Align(
-                  alignment: message.isUser
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: message.isUser
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.secondaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.75,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (message.imagePath != null)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              File(message.imagePath!),
-                              width: 200,
-                              height: 200,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        if (message.imagePath != null)
-                          const SizedBox(height: 8),
-                        SelectableText(
-                          message.text,
-                          style: TextStyle(
-                            color: message.isUser
-                                ? Colors.white
-                                : theme.colorScheme.onSecondaryContainer,
-                            fontSize: 16,
-                            height: 1.4,
-                          ),
-                          textAlign: TextAlign.left,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    theme.colorScheme.surface,
+                    theme.colorScheme.surface.withOpacity(0.95),
+                  ],
+                ),
+              ),
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                itemCount: chatProvider.currentChat?.messages.length ?? 0,
+                itemBuilder: (context, index) {
+                  final message = chatProvider.currentChat!.messages[index];
+                  return Align(
+                    alignment: message.isUser
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: message.isUser
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.secondaryContainer,
+                        borderRadius: BorderRadius.only(
+                          topLeft: const Radius.circular(20),
+                          topRight: const Radius.circular(20),
+                          bottomLeft: Radius.circular(message.isUser ? 20 : 4),
+                          bottomRight: Radius.circular(message.isUser ? 4 : 20),
                         ),
-                      ],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.75,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (message.imagePath != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(
+                                File(message.imagePath!),
+                                width: 200,
+                                height: 200,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          if (message.imagePath != null)
+                            const SizedBox(height: 12),
+                          SelectableText(
+                            message.text,
+                            style: TextStyle(
+                              color: message.isUser
+                                  ? Colors.white
+                                  : theme.colorScheme.onSecondaryContainer,
+                              fontSize: 16,
+                              height: 1.4,
+                            ),
+                            textAlign: TextAlign.left,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
           if (chatProvider.isLoading)
-            const LinearProgressIndicator()
+            LinearProgressIndicator(
+              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+              valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+            )
           else
             const SizedBox(height: 4),
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
                   offset: const Offset(0, -2),
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.image),
-                  onPressed: _pickImage,
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Type a message...',
-                      border: InputBorder.none,
+                if (chatProvider.selectedImagePath != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    maxLines: null,
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(
+                            File(chatProvider.selectedImagePath!),
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Image selected',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => chatProvider.clearSelectedImage(),
+                          color: theme.colorScheme.primary,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: _performWebSearch,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: TextField(
+                          controller: _messageController,
+                          decoration: InputDecoration(
+                            hintText: chatProvider.selectedImagePath != null
+                                ? 'Add a prompt for the image...'
+                                : 'Ask about your health...',
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(
+                              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+                            ),
+                          ),
+                          maxLines: null,
+                          textCapitalization: TextCapitalization.sentences,
+                          onSubmitted: (_) => _sendMessage(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.search),
+                      onPressed: _performWebSearch,
+                      color: theme.colorScheme.primary,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.send_rounded),
+                      onPressed: _sendMessage,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ],
       ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton(
+          onPressed: _pickImage,
+          backgroundColor: theme.colorScheme.primary,
+          child: const Icon(Icons.image, color: Colors.white),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
     );
   }
 } 

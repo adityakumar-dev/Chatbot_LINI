@@ -61,6 +61,7 @@ class ChatProvider extends ChangeNotifier {
   String? _currentChatId;
   bool _isLoading = false;
   String? _error;
+  String? _selectedImagePath;
 
   ChatProvider(this._apiService) {
     _loadChats();
@@ -70,6 +71,8 @@ class ChatProvider extends ChangeNotifier {
   String? get currentChatId => _currentChatId;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String? get selectedImagePath => _selectedImagePath;
+
   Chat? get currentChat {
     if (_chats.isEmpty) return null;
     if (_currentChatId == null) {
@@ -83,6 +86,16 @@ class ChatProvider extends ChangeNotifier {
         return _chats.first;
       },
     );
+  }
+
+  void setSelectedImage(String? path) {
+    _selectedImagePath = path;
+    notifyListeners();
+  }
+
+  void clearSelectedImage() {
+    _selectedImagePath = null;
+    notifyListeners();
   }
 
   Future<void> _loadChats() async {
@@ -228,7 +241,7 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> analyzeImage(String imagePath) async {
+  Future<Map<String, dynamic>?> analyzeImage(String imagePath, String prompt) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -243,9 +256,11 @@ class ChatProvider extends ChangeNotifier {
       final response = await _apiService.sendImage(
         imagePath,
         conversationId: int.tryParse(currentChat.id),
+        prompt: prompt,
       );
 
       _updateChatWithResponse(response);
+      _selectedImagePath = null;
       _isLoading = false;
       return response;
     } catch (e) {
