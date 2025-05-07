@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:chatbot_lini/providers/chat_provider.dart';
 import 'package:chatbot_lini/providers/auth_provider.dart';
@@ -108,7 +109,7 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            onPressed: () => chatProvider.clearCurrentChat(),
+            onPressed: () => context.go('/voice'),
           ),
           IconButton(
             icon: const Icon(Icons.logout),

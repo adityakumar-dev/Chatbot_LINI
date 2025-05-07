@@ -1,3 +1,4 @@
+import 'package:chatbot_lini/screens/voice_assistant.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chatbot_lini/screens/splash_screen.dart';
@@ -33,6 +34,10 @@ final router = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/voice',
+      builder: (context, state) =>  VoiceAssistantApp(),
     ),
   ],
 ); 
