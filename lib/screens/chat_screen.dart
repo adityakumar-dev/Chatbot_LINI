@@ -29,7 +29,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 100),
         curve: Curves.easeOut,
       );
     }
@@ -108,7 +108,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const SizedBox(width: 12),
             Text(
-              chatProvider.currentChat?.title ?? 'Health Assistant',
+              chatProvider.currentChat?.title ?? 'Rescue.ai',
               style: TextStyle(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w600,
@@ -119,13 +119,13 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.medical_services),
-            onPressed: () => context.go('/voice'),
+            icon: const Icon(Icons.mic),
+            onPressed: () => context.push('/voice'),
             color: theme.colorScheme.primary,
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => authProvider.logout(),
+            icon: const Icon(Icons.close),
+            onPressed: () => context.pop(),
             color: theme.colorScheme.primary,
           ),
         ],
@@ -372,7 +372,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80),
+        padding: const EdgeInsets.only(bottom: 150),
         child: FloatingActionButton(
           onPressed: _pickImage,
           backgroundColor: theme.colorScheme.primary,

@@ -29,7 +29,7 @@ class AuthProvider extends ChangeNotifier {
         _isAuthenticated = true;
         _username = username;
         _showSuccessDialog(context, 'Welcome Back!', 'You have successfully logged in.', () {
-          context.go('/chat');
+          context.go('/health');
         });
         return true;
       } else {

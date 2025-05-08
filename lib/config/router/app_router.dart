@@ -1,3 +1,5 @@
+import 'package:chatbot_lini/screens/health_assistant_home.dart';
+import 'package:chatbot_lini/screens/health_chat.dart';
 import 'package:chatbot_lini/screens/voice_assistant.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -38,6 +40,18 @@ final router = GoRouter(
     GoRoute(
       path: '/voice',
       builder: (context, state) =>  VoiceAssistantApp(),
+    ),
+    GoRoute(
+      path: '/health',
+      builder: (context, state) => const HealthAssistantHome(),
+    ),
+    GoRoute(path: '/health-chat',
+      builder: (context, state){
+      final userQuery =   state.extra as List;
+      return HealthChatScreen(
+        userQuery: userQuery[0],
+isAccident: userQuery[1],      );
+      },
     ),
   ],
 ); 

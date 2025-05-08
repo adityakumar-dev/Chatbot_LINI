@@ -26,8 +26,9 @@ class _SplashScreenState extends State<SplashScreen> {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt('user_id');
     if (userId != null) {
-      context.go('/chat');
+      context.go('/health');
     } else {
+      // context.go('/login');
       context.go('/login');
     }
   }
@@ -52,14 +53,14 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.health_and_safety,
-                size: 100,
-                color: theme.colorScheme.primary,
+             Image.asset(
+                'assets/images/logo.png',
+                width: 100,
+                height: 100,
               ),
               const SizedBox(height: 24),
               Text(
-                'Health Assistant',
+                'ResQ.Ai',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.bold,
