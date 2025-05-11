@@ -70,6 +70,7 @@ class _HealthAssistantHomeState extends State<HealthAssistantHome> {
     }
   }
 
+
   Future<void> handleCall(String number) async {
     if (await Permission.phone.isDenied) {
       await Permission.phone.request();
@@ -304,7 +305,7 @@ class _HealthAssistantHomeState extends State<HealthAssistantHome> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: InkWell(
                         onTap: () {
-                          context.push('/women-safety');
+                          context.push('/emergency-support/women-safety');
                         },
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
@@ -332,7 +333,7 @@ class _HealthAssistantHomeState extends State<HealthAssistantHome> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: InkWell(
                         onTap: () {
-                          context.push('/medical-support');
+                          context.push('/emergency-support/medical-support');
                         },
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
@@ -360,7 +361,7 @@ class _HealthAssistantHomeState extends State<HealthAssistantHome> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: InkWell(
                         onTap: () {
-                          context.push('/police-support');
+                          context.push('/emergency-support/police-support');
                         },
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),

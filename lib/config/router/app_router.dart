@@ -15,6 +15,7 @@ import 'package:chatbot_lini/screens/chat_screen.dart';
 import 'package:chatbot_lini/screens/history/history_screen.dart';
 import 'package:chatbot_lini/screens/settings/settings_screen.dart';
 import 'package:chatbot_lini/screens/emergency_contacts.dart';
+import 'package:chatbot_lini/screens/emergency_support.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -88,6 +89,13 @@ GoRoute(
 GoRoute(
   path: '/emergency-contacts',
   builder: (context, state) => const EmergencyContactsScreen(),
+),
+GoRoute(
+  path: '/emergency-support/:role',
+  builder: (context, state) {
+    final role = state.pathParameters['role'];
+    return EmergencySupportPage(role: role ?? '');
+  },
 ),
   ],
 ); 

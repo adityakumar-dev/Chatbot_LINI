@@ -67,6 +67,7 @@ dependencies:
   hive_flutter: ^1.1.0
   sms_advanced: ^1.1.0
   another_telephony: ^0.4.1
+  flutter_sound: ^9.28.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

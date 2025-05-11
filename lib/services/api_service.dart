@@ -37,7 +37,7 @@ class ApiService {
           await _prefs.setString('username', username);
           await _prefs.setString('name', data['user']['name']);
           await _prefs.setString('role', "user");
-          await _prefs.setString('name', data['user']['contact']);
+          await _prefs.setString('phone', data['user']['contact']);
           return {
             'success': true,
             'message': 'Login successful!',
