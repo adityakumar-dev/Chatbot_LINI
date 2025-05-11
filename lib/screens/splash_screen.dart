@@ -25,8 +25,19 @@ class _SplashScreenState extends State<SplashScreen> {
 
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt('user_id');
-    if (userId != null) {
-      context.go('/health');
+    final role = prefs.getString('role');
+    if (role != null) {
+      debugPrint("User ID: $userId");
+      debugPrint("Role: $role");
+      if(role == "user"){
+  context.go('/health');
+    
+      }else{
+        context.go('/admin-home');
+      
+        // context.go('/health');
+
+      }
     } else {
       // context.go('/login');
       context.go('/login');

@@ -383,4 +383,5 @@ class _ChatScreenState extends State<ChatScreen> {
       floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
     );
   }
+  
 } 

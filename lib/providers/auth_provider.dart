@@ -45,18 +45,18 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> register(String username, String password, BuildContext context) async {
+  Future<bool> register(String username, String password, BuildContext context, String? name, String? contact) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final response = await _apiService.register(username, password);
+      final response = await _apiService.register(username, password, name, contact);
       if (response['success']) {
         _isAuthenticated = true;
         _username = username;
         _showSuccessDialog(context, 'Welcome!', 'Your account has been created successfully.', () {
-          context.go('/chat');
+          context.go('/health');
         });
         return true;
       } else {

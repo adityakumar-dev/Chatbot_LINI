@@ -32,8 +32,12 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success') {
-          await _prefs.setString(_tokenKey, data['access_token']);
           await _prefs.setInt(_userIdKey, data['user_id']);
+          // await _prefs.setString(_tokenKey, data['token']);
+          await _prefs.setString('username', username);
+          await _prefs.setString('name', data['user']['name']);
+          await _prefs.setString('role', "user");
+          await _prefs.setString('name', data['user']['contact']);
           return {
             'success': true,
             'message': 'Login successful!',
@@ -54,7 +58,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> register(String username, String password) async {
+  Future<Map<String, dynamic>> register(String username, String password,name,contact) async {
     try {
       final response = await _client.post(
         Uri.parse('$_baseUrl/auth/register'),
@@ -62,14 +66,20 @@ class ApiService {
         body: jsonEncode({
           'username': username,
           'password': password,
+          'name' : name,
+          'contact' : contact
         }),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success') {
-          await _prefs.setString(_tokenKey, data['access_token']);
           await _prefs.setInt(_userIdKey, data['user_id']);
+          await _prefs.setString('username', username);
+          await _prefs.setString('password', password);
+          await _prefs.setString('name', name);
+          await _prefs.setString('contact', contact);
+          await _prefs.setString('role', 'user');
           return {
             'success': true,
             'message': 'Registration successful!',
@@ -212,4 +222,4 @@ class ApiService {
       throw Exception('Failed to get chat history: $e');
     }
   }
-} 
+}

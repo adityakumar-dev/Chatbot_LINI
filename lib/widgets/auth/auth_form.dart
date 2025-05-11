@@ -5,7 +5,7 @@ class AuthForm extends StatefulWidget {
   final bool isLoading;
   final String? error;
   final bool isLogin;
-  final Function(String username, String password, BuildContext context) onSubmit;
+  final Function(String username, String password, BuildContext context, String? name, String? contact) onSubmit;
 
   const AuthForm({
     super.key,
@@ -23,7 +23,8 @@ class _AuthFormState extends State<AuthForm> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-
+  final _nameController = TextEditingController();
+  final _contactController = TextEditingController();
   @override
   void dispose() {
     _usernameController.dispose();
@@ -37,6 +38,8 @@ class _AuthFormState extends State<AuthForm> {
         _usernameController.text.trim(),
         _passwordController.text.trim(),
         context,
+        widget.isLogin ? null : _nameController.text.trim(),
+        widget.isLogin ? null : _contactController.text.trim(),
       );
     }
   }
@@ -47,6 +50,30 @@ class _AuthFormState extends State<AuthForm> {
       key: _formKey,
       child: Column(
         children: [
+          if (!widget.isLogin)
+          Column(
+            children: [
+ TextFormField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              labelText: 'Your Name',
+              border: OutlineInputBorder(),
+            ),
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _submit(),
+           
+          ), TextFormField(
+            controller: _contactController,
+            decoration: const InputDecoration(
+              labelText: 'Contact',
+              border: OutlineInputBorder(),
+            ),
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _submit(),
+           
+          ),
+            ],
+          ),
           TextFormField(
             controller: _usernameController,
             decoration: const InputDecoration(
@@ -93,6 +120,7 @@ class _AuthFormState extends State<AuthForm> {
               ),
             ),
           ],
+          
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,

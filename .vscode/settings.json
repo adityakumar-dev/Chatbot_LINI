@@ -1,4 +1,5 @@
 {
     "zencoder.enableRepoIndexing": true,
-    "cmake.sourceDirectory": "/home/linmar/Desktop/experimental/models/chatbot_lini/linux"
+    "cmake.sourceDirectory": "/home/linmar/Desktop/experimental/models/chatbot_lini/linux",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

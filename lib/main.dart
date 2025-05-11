@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
 import 'package:chatbot_lini/screens/splash_screen.dart';
 import 'package:chatbot_lini/services/api_service.dart';
@@ -14,6 +15,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   final prefs = await SharedPreferences.getInstance();
+  Hive.initFlutter();
   final apiService = ApiService(http.Client(), prefs);
   
   runApp(
