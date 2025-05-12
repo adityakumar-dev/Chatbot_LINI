@@ -151,7 +151,7 @@ Future<void> _fetchLocation(BuildContext context) async {
                   ? Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                       onPressed: () => _submitForm(context),
-                      child: Text("Submit"),
+                      child: Text("Submit",style: TextStyle(color: Colors.white),),
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                     ),
             ],

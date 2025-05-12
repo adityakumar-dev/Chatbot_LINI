@@ -277,7 +277,7 @@ class _HealthAssistantHomeState extends State<HealthAssistantHome> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          context.go('/user-help');
+                          context.push('/user-help');
                         },
                         child: Text("Ask for help", style: TextStyle(color: Colors.red)),
                         style: ElevatedButton.styleFrom(
@@ -294,7 +294,7 @@ class _HealthAssistantHomeState extends State<HealthAssistantHome> {
               ),
               const SizedBox(height: 24),
               _UrgencyCard(
-                title: "Emergency Support",
+                title: "First Emergency Support",
                 color: Colors.purpleAccent,
                 icon: Icons.support_agent,
                 onTap: () {},
@@ -405,37 +405,24 @@ class _HealthAssistantHomeState extends State<HealthAssistantHome> {
                 ),
               ),
               const SizedBox(height: 24),
-              _UrgencyCard(
-                title: "Chatbot (Scan Your Report)",
-                color: Colors.blueAccent,
-                icon: Icons.chat,
-                onTap: () {},
-                content: Column(
-                  children: [
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.upload),
-                      label: Text("Upload Image"),
-                      onPressed: _pickImage,
-                    ),
-                    if (_image != null) ...[
-                      SizedBox(height: 10),
-                      Image.file(_image!, height: 200),
+              GestureDetector(
+                onTap: (){
+                                    context.push('/report-scan');
+
+                },
+                child: _UrgencyCard(
+                  title: "Chatbot (Scan Your Report)",
+                  color: Colors.blueAccent,
+                  icon: Icons.chat,
+                  onTap: () {
+                  },
+                  content: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Scan Your Reports....", style: TextStyle(color: Colors.black,),),
+                      Icon(Icons.arrow_back_ios_new_outlined, color: Colors.black,)  // SizedBox(width: 10,)
                     ],
-                    SizedBox(height: 10),
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.send),
-                      label: Text("Send to Chatbot"),
-                      onPressed: _uploadImageAndGetResponse,
-                    ),
-                    if (_isLoading) ...[
-                      SizedBox(height: 10),
-                      CircularProgressIndicator(),
-                    ],
-                    if (_chatbotResponse.isNotEmpty) ...[
-                      SizedBox(height: 10),
-                      Text("Chatbot Response: $_chatbotResponse"),
-                    ],
-                  ],
+                  ),
                 ),
               ),
             ],

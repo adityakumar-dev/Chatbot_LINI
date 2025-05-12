@@ -35,21 +35,26 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-
           SnackBar(content: Text('Login successful: ${res['user']['role']}')),
         );
         SharedPreferences prefs = await SharedPreferences.getInstance();
         prefs.clear();
-        prefs.setString('username', _email);
-        prefs.setString('name', res['user']['name']);
-        prefs.setString('role', "admin");
-        prefs.setString('contact', res['user']['contact']);
-        prefs.setString('location', res['user']['location_cordinate']);
+        final user = res['user'];
+        prefs.setString('username', user['username'] ?? '');
+        prefs.setString('name', user['name'] ?? '');
+        prefs.setString('role', user['role'] ?? '');
+        prefs.setString('contact', user['contact'] ?? '');
+        prefs.setString('location', user['location_cordinate'] ?? '');
+        prefs.setString('official_id', user['official_id'] ?? '');
+        prefs.setString('city', user['city'] ?? '');
+        prefs.setString('email', user['email'] ?? '');
+        prefs.setString('is_organization', user['is_organization'] ?? '');
+        prefs.setString('created_at', user['created_at'] ?? '');
+        prefs.setString('password', user['password'] ?? '');
+        prefs.setInt('id', user['id'] ?? 0);
         
         debugPrint(res.toString());
-        context.go('/admin-home', extra: _email);
-        // Store user data in shared preferences or any state management solution
-
+        context.go('/admin-home', extra: user['username']);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Login failed: ${res['detail']}')),

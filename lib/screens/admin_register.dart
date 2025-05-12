@@ -22,7 +22,14 @@ TextEditingController nameController = TextEditingController();
   bool isOrganization = false;
   bool isLoading = false;
 
-  final List<String> roles = ['Doctor', 'Police', 'Emergency Dispatcher', 'Hospital Staff'];
+  final List<String> roles = [
+    'Doctor',
+    'Police',
+    'Women Safety',
+    'Road Accident/Medical Support',
+    'Emergency Dispatcher',
+    'Hospital Staff',
+  ];
   final List<String> cities = ['Dehradun', 'Haridwar', 'Rishikesh', 'Nainital'];
 
   Future<void> _handleRegister() async {

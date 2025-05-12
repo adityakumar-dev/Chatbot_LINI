@@ -5,6 +5,7 @@ import 'package:chatbot_lini/screens/admin_login.dart';
 import 'package:chatbot_lini/screens/admin_register.dart';
 import 'package:chatbot_lini/screens/health_assistant_home.dart';
 import 'package:chatbot_lini/screens/health_chat.dart';
+import 'package:chatbot_lini/screens/report_analyzer.dart';
 import 'package:chatbot_lini/screens/user_help.dart';
 import 'package:chatbot_lini/screens/voice_assistant.dart';
 import 'package:flutter/material.dart';
@@ -90,6 +91,11 @@ GoRoute(
   path: '/emergency-contacts',
   builder: (context, state) => const EmergencyContactsScreen(),
 ),
+
+GoRoute(
+  path: '/report-scan',
+  builder: (context, state) =>  ReportAnalyzerScreen(),
+),
 GoRoute(
   path: '/emergency-support/:role',
   builder: (context, state) {
@@ -97,5 +103,6 @@ GoRoute(
     return EmergencySupportPage(role: role ?? '');
   },
 ),
+
   ],
 ); 

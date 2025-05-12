@@ -431,12 +431,12 @@ class _EmergencySupportPageState extends State<EmergencySupportPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Emergency Support Options',
+              'Quick Emergency Support Options',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
             _buildEmergencyCard(
-              title: 'Quick Alert',
+              title: 'Reach me fast',
               description: 'Send immediate alert with your location',
               icon: Icons.warning,
               color: Colors.red,
@@ -444,7 +444,7 @@ class _EmergencySupportPageState extends State<EmergencySupportPage> {
             ),
             SizedBox(height: 16),
             _buildEmergencyCard(
-              title: 'Voice Recording',
+              title: 'Send Voice Note',
               description: 'Record and send voice message',
               icon: Icons.mic,
               color: Colors.blue,
@@ -546,7 +546,7 @@ class _EmergencySupportPageState extends State<EmergencySupportPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Detailed Report',
+                        'Short Discription',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
