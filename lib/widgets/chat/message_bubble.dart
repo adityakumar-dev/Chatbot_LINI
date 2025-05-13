@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:chatbot_lini/providers/chat_provider.dart';
 import 'dart:io';
+
+import 'package:resq.ai/providers/chat_provider.dart';
 
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;

@@ -1,22 +1,23 @@
-import 'package:chatbot_lini/screens/complete_emergency.dart';
-import 'package:chatbot_lini/screens/contact_screens.dart';
-import 'package:chatbot_lini/screens/emergency_respond.dart';
-import 'package:chatbot_lini/screens/admin_login.dart';
-import 'package:chatbot_lini/screens/admin_register.dart';
-import 'package:chatbot_lini/screens/health_assistant_home.dart';
-import 'package:chatbot_lini/screens/health_chat.dart';
-import 'package:chatbot_lini/screens/report_analyzer.dart';
-import 'package:chatbot_lini/screens/user_help.dart';
-import 'package:chatbot_lini/screens/voice_assistant.dart';
+import 'package:resq.ai/screens/admin/user_info_screen.dart';
+import 'package:resq.ai/screens/complete_emergency.dart';
+import 'package:resq.ai/screens/contact_screens.dart';
+import 'package:resq.ai/screens/emergency_respond.dart';
+import 'package:resq.ai/screens/admin_login.dart';
+import 'package:resq.ai/screens/admin_register.dart';
+import 'package:resq.ai/screens/health_assistant_home.dart';
+import 'package:resq.ai/screens/health_chat.dart';
+import 'package:resq.ai/screens/report_analyzer.dart';
+import 'package:resq.ai/screens/user_help.dart';
+import 'package:resq.ai/screens/voice_assistant.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:chatbot_lini/screens/splash_screen.dart';
-import 'package:chatbot_lini/screens/auth/login_screen.dart';
-import 'package:chatbot_lini/screens/chat_screen.dart';
-import 'package:chatbot_lini/screens/history/history_screen.dart';
-import 'package:chatbot_lini/screens/settings/settings_screen.dart';
-import 'package:chatbot_lini/screens/emergency_contacts.dart';
-import 'package:chatbot_lini/screens/emergency_support.dart';
+import 'package:resq.ai/screens/splash_screen.dart';
+import 'package:resq.ai/screens/auth/login_screen.dart';
+import 'package:resq.ai/screens/chat_screen.dart';
+import 'package:resq.ai/screens/history/history_screen.dart';
+import 'package:resq.ai/screens/settings/settings_screen.dart';
+import 'package:resq.ai/screens/emergency_contacts.dart';
+import 'package:resq.ai/screens/emergency_support.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -103,6 +104,12 @@ GoRoute(
     return EmergencySupportPage(role: role ?? '');
   },
 ),
-
+GoRoute(
+  path: '/admin-user-info',
+  builder: (context, state) {
+    final userId = state.extra as int;
+    return UserInfoScreen(userId: userId);
+  },
+),
   ],
 ); 

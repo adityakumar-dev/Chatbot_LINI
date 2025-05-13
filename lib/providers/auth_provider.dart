@@ -1,5 +1,8 @@
+import 'package:resq.ai/providers/geolocator_handler.dart';
+import 'package:resq.ai/widgets/common/alert_dailog.dart';
 import 'package:flutter/material.dart';
-import 'package:chatbot_lini/services/api_service.dart';
+import 'package:resq.ai/services/api_service.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -24,7 +27,16 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiService.login(username, password);
+      Position? position;
+      try{
+        position = await GeolocatorHandler.getCurrentLocation(context);
+      }catch(e){
+        position = null;
+        kAlertDialog(context: context, title: 'Login Failed', message: 'Please enable location permission in your device settings');
+        return false;
+      }
+      
+      final response = await _apiService.login(username, password, position);
       if (response['success']) {
         _isAuthenticated = true;
         _username = username;
@@ -45,13 +57,22 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> register(String username, String password, BuildContext context, String? name, String? contact) async {
+  Future<bool> register(String username, String password, BuildContext context, String? name, String? contact, String? speciality, String? address, String? required_needs) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final response = await _apiService.register(username, password, name, contact);
+      Position? position;
+      try{
+      position = await GeolocatorHandler.getCurrentLocation(context);
+      }catch(e){
+        position = null;
+      kAlertDialog(context: context, title: 'Sign Up Failed', message: 'Please enable location permission in your device settings');
+        return false;
+      }
+
+      final response = await _apiService.register(username, password, name, contact, speciality, address, required_needs, position);
       if (response['success']) {
         _isAuthenticated = true;
         _username = username;

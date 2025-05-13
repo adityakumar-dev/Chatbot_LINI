@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:chatbot_lini/services/api_service.dart';
+import 'package:resq.ai/services/api_service.dart';
 import 'dart:io';
 
 final _uuid = Uuid();

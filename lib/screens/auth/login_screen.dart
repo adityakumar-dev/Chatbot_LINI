@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:chatbot_lini/providers/auth_provider.dart';
-import 'package:chatbot_lini/widgets/auth/auth_form.dart';
+import 'package:resq.ai/providers/auth_provider.dart';
+import 'package:resq.ai/widgets/auth/auth_form.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,6 +21,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: Container(),
+        elevation: 0,
+        scrolledUnderElevation: 0,
      backgroundColor: Colors.transparent,
      actions: [
       IconButton(onPressed: (){context.push('/admin-login');}, icon: Container(
@@ -61,11 +63,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   isLoading: authProvider.isLoading,
                   error: authProvider.error,
                   isLogin: isLogin,
-                  onSubmit: (username, password, context,name ,contact) async {
+                  onSubmit: (username, password, context,name ,contact,speciality,address,required_needs) async {
                     if (isLogin) {
                       await authProvider.login(username, password, context);
                     } else {
-                      await authProvider.register(username, password, context, name,contact);
+                      await authProvider.register(username, password, context, name,contact,speciality,address,required_needs);
                     }
                   },
                 ),

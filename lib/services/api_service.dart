@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,14 +19,17 @@ class ApiService {
         if (_token != null) 'Authorization': 'Bearer $_token',
       };
 
-  Future<Map<String, dynamic>> login(String username, String password) async {
+  Future<Map<String, dynamic>> login(String username, String password, Position position) async {
     try {
+
+
       final response = await _client.post(
         Uri.parse('$_baseUrl/auth/login'),
         headers: _headers,
         body: jsonEncode({
           'username': username,
           'password': password,
+          'last_location' : "${position.latitude},${position.longitude}"
         }),
       );
 
@@ -38,6 +42,10 @@ class ApiService {
           await _prefs.setString('name', data['user']['name']);
           await _prefs.setString('role', "user");
           await _prefs.setString('phone', data['user']['contact']);
+          await _prefs.setString('location', "${position.latitude},${position.longitude}");
+          await _prefs.setString('speciality', data['user']['speciality']);
+          await _prefs.setString('address', data['user']['address']);
+          await _prefs.setString('required_needs', data['user']['required_needs']);
           return {
             'success': true,
             'message': 'Login successful!',
@@ -58,8 +66,9 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> register(String username, String password,name,contact) async {
+  Future<Map<String, dynamic>> register(String username, String password,name,contact,speciality,address,required_needs, Position position) async {
     try {
+
       final response = await _client.post(
         Uri.parse('$_baseUrl/auth/register'),
         headers: _headers,
@@ -67,7 +76,11 @@ class ApiService {
           'username': username,
           'password': password,
           'name' : name,
-          'contact' : contact
+          'contact' : contact,
+          'speciality' : speciality,
+          'address' : address,
+          'required_needs' : required_needs,
+          'last_location' : "${position.latitude},${position.longitude}"
         }),
       );
 
@@ -80,6 +93,10 @@ class ApiService {
           await _prefs.setString('name', name);
           await _prefs.setString('contact', contact);
           await _prefs.setString('role', 'user');
+          await _prefs.setString('speciality', speciality);
+          await _prefs.setString('address', address);
+          await _prefs.setString('required_needs', required_needs);
+          await _prefs.setString('location', "${position.latitude},${position.longitude}");
           return {
             'success': true,
             'message': 'Registration successful!',

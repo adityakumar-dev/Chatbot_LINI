@@ -5,7 +5,7 @@ class AuthForm extends StatefulWidget {
   final bool isLoading;
   final String? error;
   final bool isLogin;
-  final Function(String username, String password, BuildContext context, String? name, String? contact) onSubmit;
+  final Function(String username, String password, BuildContext context, String? name, String? contact, String? speciality, String? address, String? required_needs) onSubmit;
 
   const AuthForm({
     super.key,
@@ -25,6 +25,9 @@ class _AuthFormState extends State<AuthForm> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
+  final _required_needs = TextEditingController();
+  final _specialityController = TextEditingController();
+  final _addressController = TextEditingController();
   @override
   void dispose() {
     _usernameController.dispose();
@@ -40,6 +43,9 @@ class _AuthFormState extends State<AuthForm> {
         context,
         widget.isLogin ? null : _nameController.text.trim(),
         widget.isLogin ? null : _contactController.text.trim(),
+        widget.isLogin ? null : _specialityController.text.trim(),
+        widget.isLogin ? null : _addressController.text.trim(),
+        widget.isLogin ? null : _required_needs.text.trim(),
       );
     }
   }
@@ -55,30 +61,86 @@ class _AuthFormState extends State<AuthForm> {
             children: [
  TextFormField(
             controller: _nameController,
-            decoration: const InputDecoration(
+            decoration:  InputDecoration(
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:  BorderSide(color: Colors.grey.shade300),
+              ),
               labelText: 'Your Name',
-              border: OutlineInputBorder(),
+              border:const OutlineInputBorder(),
             ),
+
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _submit(),
            
-          ), TextFormField(
+          ),
+          const SizedBox(height: 8),
+           TextFormField(
             controller: _contactController,
-            decoration: const InputDecoration(
+            decoration:  InputDecoration(
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:  BorderSide(color: Colors.grey.shade300),
+              ),
               labelText: 'Contact',
-              border: OutlineInputBorder(),
+              border:const OutlineInputBorder(),
             ),
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _submit(),
            
+          ),
+
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _specialityController,
+            decoration:  InputDecoration(
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:  BorderSide(color: Colors.grey.shade300),
+              ),
+              labelText: 'Speciality (Optional)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _addressController,
+            decoration:  InputDecoration(
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:  BorderSide(color: Colors.grey.shade300),
+              ),
+              labelText: 'Address',
+              border:const OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _required_needs,
+            decoration:  InputDecoration(
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:  BorderSide(color: Colors.grey.shade300),
+              ),
+              labelText: 'Any Required Needs (Medicine, etc.)',
+              border:const OutlineInputBorder(),
+            ),
           ),
             ],
           ),
+
+          const SizedBox(height: 8),
           TextFormField(
             controller: _usernameController,
-            decoration: const InputDecoration(
+            decoration:  InputDecoration(
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:  BorderSide(color: Colors.grey.shade300),
+              ),
               labelText: 'Username',
-              border: OutlineInputBorder(),
+              border:const OutlineInputBorder(),
             ),
             textInputAction: TextInputAction.next,
             // validator: (value) {
@@ -91,12 +153,16 @@ class _AuthFormState extends State<AuthForm> {
             //   return null;
             // },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           TextFormField(
             controller: _passwordController,
-            decoration: const InputDecoration(
+            decoration:  InputDecoration(
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:  BorderSide(color: Colors.grey.shade300),
+              ),
               labelText: 'Password',
-              border: OutlineInputBorder(),
+              border:const OutlineInputBorder(),
             ),
             obscureText: true,
             textInputAction: TextInputAction.done,
@@ -129,7 +195,7 @@ class _AuthFormState extends State<AuthForm> {
               onPressed: widget.isLoading ? null : _submit,
               child: widget.isLoading
                   ? const CircularProgressIndicator()
-                  : Text(widget.isLogin ? 'Login' : 'Sign Up'),
+                  : Text(widget.isLogin ? 'Login' : 'Sign Up With Current Location'),
             ),
           ),
         ],

@@ -89,7 +89,7 @@ class _EmergencyResponsePageState extends State<EmergencyResponsePage> with Rout
     switch (status) {
       case 'read':
         return 'In Progress';
-      case 'unread':
+      case 'pending':
         return 'New Alert';
       case 'completed':
         return 'Resolved';
@@ -139,59 +139,219 @@ class _EmergencyResponsePageState extends State<EmergencyResponsePage> with Rout
   }
 
   Widget _buildNotificationCard(Map notif) {
+    final bool isUrgent = notif['status'] == 'pending';
+    final bool isInProgress = notif['status'] == 'read';
+    final bool isCompleted = notif['status'] == 'completed';
+
     return Card(
-      color: _getCardColor(notif),
-      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: EdgeInsets.all(16),
-        title: Text(
-          notif['notification'],
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Help Needed: ${notif['name']}"),
-            _buildMedia(notif),
-            Row(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: isUrgent ? 8 : 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isUrgent 
+          ? BorderSide(color: Colors.red.shade300, width: 2)
+          : BorderSide.none,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Status Bar
+          Container(
+            decoration: BoxDecoration(
+              color: isUrgent 
+                ? Colors.red.shade50
+                : isInProgress 
+                  ? Colors.orange.shade50 
+                  : Colors.green.shade50,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
               children: [
-                Text("Contact : ${notif['contact']}"),
-                SizedBox(width: 8),
-                IconButton(
-                  icon: Icon(Icons.call),
-                  onPressed: () {
-                    FlutterPhoneDirectCaller.callNumber(notif['contact']);
-                  },
+                Icon(
+                  isUrgent 
+                    ? Icons.warning_rounded
+                    : isInProgress 
+                      ? Icons.pending_actions 
+                      : Icons.check_circle,
+                  color: isUrgent 
+                    ? Colors.red 
+                    : isInProgress 
+                      ? Colors.orange 
+                      : Colors.green,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _formatStatus(notif['status']),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isUrgent 
+                      ? Colors.red 
+                      : isInProgress 
+                        ? Colors.orange 
+                        : Colors.green,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  notif['role'] ?? 'Unknown',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
-            
-            
-            Text("📍 Location: ${notif['coordinate']}"),
-            ElevatedButton(onPressed: (){
-          launchUrl(Uri.parse('https://www.google.com/maps/search/?api=1&query=${notif['coordinate']}'));
-
-            }, child: Text("View on Maps")),
-            SizedBox(height: 4),
-            Row(
+          ),
+          
+          // Main Content
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _statusBadge(notif['status']),
-                SizedBox(width: 8),
-                Text("📌 Status: ${_formatStatus(notif['status'])}"),
+                // Emergency Message
+                Text(
+                  notif['notification'],
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // User Info Section
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            child: Text(
+                              (notif['name'] as String).substring(0, 1).toUpperCase(),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  notif['name'],
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                if (notif['action_taken_by'] != null)
+                                  Text(
+                                    'Responder: ${notif['action_taken_by']}',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.info_outline),
+                            onPressed: () => context.push('/admin-user-info', extra: notif['user_id']),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Contact Section
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => FlutterPhoneDirectCaller.callNumber(notif['contact']),
+                        icon: const Icon(Icons.phone),
+                        label: Text(notif['contact']),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => launchUrl(
+                        Uri.parse('https://www.google.com/maps/search/?api=1&query=${notif['coordinate']}')
+                      ),
+                      icon: const Icon(Icons.map),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Media Section
+                if (notif['user_image_path'] != null || notif['user_voice_path'] != null)
+                  Container(
+                    margin: const EdgeInsets.only(top: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Attached Media',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildMedia(notif),
+                      ],
+                    ),
+                  ),
+
+                // Action Buttons
+                if (!isCompleted)
+                  Container(
+                    margin: const EdgeInsets.only(top: 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => _showActionDialog(notif),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isUrgent ? Colors.red : Colors.orange,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Text(
+                              isUrgent ? 'Take Action' : 'Complete Emergency',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
-            if (notif['action_taken_by'] != null)
-              Text("👮 Responder: ${notif['action_taken_by']}"),
-          ],
-        ),
-        trailing: notif['status'] == 'completed'
-            ? Icon(Icons.check_circle, color: Colors.green)
-            : IconButton(
-                icon: Icon(Icons.info, color: Colors.blue),
-                onPressed: () => _showActionDialog(notif),
-              ),
+          ),
+        ],
       ),
     );
   }
@@ -267,29 +427,56 @@ class _EmergencyResponsePageState extends State<EmergencyResponsePage> with Rout
     return SizedBox.shrink();
   }
 
+  // Update the status badge to be more visually appealing
   Widget _statusBadge(String status) {
-    Color color;
-    String text;
-    switch (status) {
-      case 'pending':
-        color = Colors.white;
-        text = 'Pending';
-        break;
-      case 'completed':
-        color = Colors.green;
-        text = 'Completed';
-        break;
-      default:
-        color = Colors.grey;
-        text = status;
-    }
+    final Map<String, Map<String, dynamic>> statusConfig = {
+      'pending': {
+        'color': Colors.red,
+        'text': 'Urgent',
+        'icon': Icons.warning_rounded,
+      },
+      'read': {
+        'color': Colors.orange,
+        'text': 'In Progress',
+        'icon': Icons.pending_actions,
+      },
+      'completed': {
+        'color': Colors.green,
+        'text': 'Resolved',
+        'icon': Icons.check_circle,
+      },
+    };
+
+    final config = statusConfig[status] ?? statusConfig['pending']!;
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
+        color: (config['color'] as Color).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: (config['color'] as Color).withOpacity(0.5),
+        ),
       ),
-      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            config['icon'] as IconData,
+            size: 16,
+            color: config['color'] as Color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            config['text'] as String,
+            style: TextStyle(
+              color: config['color'] as Color,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -297,25 +484,74 @@ class _EmergencyResponsePageState extends State<EmergencyResponsePage> with Rout
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        centerTitle: false,
-        title: Text("Dashboard"),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Dashboard'),
+            Text(
+              'Role: ${adminRole.toUpperCase()}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
         actions: [
-          IconButton(icon: Icon(Icons.refresh), onPressed: _fetchNotifications),
-          IconButton(onPressed: ()async{
-            SharedPreferences prefs = await SharedPreferences.getInstance();
-            prefs.clear();
-            context.go('/login');
-          }
-          , icon: Icon(Icons.logout))
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _fetchNotifications,
+          ),
+          IconButton(
+            onPressed: () async {
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              prefs.clear();
+              context.go('/login');
+            },
+            icon: const Icon(Icons.logout),
+          ),
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading emergencies...'),
+                ],
+              ),
+            )
           : _filteredNotifications.isEmpty
-              ? Center(child: Text("No emergencies at the moment."))
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 64,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No Active Emergencies',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Pull to refresh or tap the refresh button',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
               : RefreshIndicator(
                   onRefresh: _fetchNotifications,
                   child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount: _filteredNotifications.length,
                     itemBuilder: (context, index) {
                       return _buildNotificationCard(_filteredNotifications[index]);
