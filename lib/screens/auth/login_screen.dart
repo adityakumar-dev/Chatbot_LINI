@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:resq.ai/providers/auth_provider.dart';
-import 'package:resq.ai/widgets/auth/auth_form.dart';
+import 'package:chatbot_lini/providers/auth_provider.dart';
+import 'package:chatbot_lini/widgets/auth/auth_form.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

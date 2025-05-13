@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:resq.ai/providers/auth_provider.dart';
-import 'package:resq.ai/providers/theme_provider.dart';
+import 'package:chatbot_lini/providers/auth_provider.dart';
+import 'package:chatbot_lini/providers/theme_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});

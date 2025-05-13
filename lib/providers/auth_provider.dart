@@ -1,7 +1,8 @@
-import 'package:resq.ai/providers/geolocator_handler.dart';
-import 'package:resq.ai/widgets/common/alert_dailog.dart';
+import 'package:chatbot_lini/config/firebase/firebase_functions.dart';
+import 'package:chatbot_lini/providers/geolocator_handler.dart';
+import 'package:chatbot_lini/widgets/common/alert_dailog.dart';
 import 'package:flutter/material.dart';
-import 'package:resq.ai/services/api_service.dart';
+import 'package:chatbot_lini/services/api_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
@@ -35,8 +36,9 @@ class AuthProvider extends ChangeNotifier {
         kAlertDialog(context: context, title: 'Login Failed', message: 'Please enable location permission in your device settings');
         return false;
       }
+      final fcmToken = await FirebaseFunctions.getFcmToken();
       
-      final response = await _apiService.login(username, password, position);
+      final response = await _apiService.login(username, password, position, fcmToken ?? ''); 
       if (response['success']) {
         _isAuthenticated = true;
         _username = username;
@@ -71,8 +73,8 @@ class AuthProvider extends ChangeNotifier {
       kAlertDialog(context: context, title: 'Sign Up Failed', message: 'Please enable location permission in your device settings');
         return false;
       }
-
-      final response = await _apiService.register(username, password, name, contact, speciality, address, required_needs, position);
+      final fcmToken = await FirebaseFunctions.getFcmToken();
+      final response = await _apiService.register(username, password, name, contact, speciality, address, required_needs, position, fcmToken ?? '');
       if (response['success']) {
         _isAuthenticated = true;
         _username = username;

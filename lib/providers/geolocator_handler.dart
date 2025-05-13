@@ -1,4 +1,4 @@
-import 'package:resq.ai/widgets/common/alert_dailog.dart';
+import 'package:chatbot_lini/widgets/common/alert_dailog.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 

@@ -19,7 +19,7 @@ class ApiService {
         if (_token != null) 'Authorization': 'Bearer $_token',
       };
 
-  Future<Map<String, dynamic>> login(String username, String password, Position position) async {
+  Future<Map<String, dynamic>> login(String username, String password, Position position, String fcmToken) async {
     try {
 
 
@@ -29,7 +29,8 @@ class ApiService {
         body: jsonEncode({
           'username': username,
           'password': password,
-          'last_location' : "${position.latitude},${position.longitude}"
+          'last_location' : "${position.latitude},${position.longitude}",
+          'fcm_token' : fcmToken
         }),
       );
 
@@ -66,7 +67,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> register(String username, String password,name,contact,speciality,address,required_needs, Position position) async {
+  Future<Map<String, dynamic>> register(String username, String password,name,contact,speciality,address,required_needs, Position position, String fcmToken) async {
     try {
 
       final response = await _client.post(
@@ -80,7 +81,8 @@ class ApiService {
           'speciality' : speciality,
           'address' : address,
           'required_needs' : required_needs,
-          'last_location' : "${position.latitude},${position.longitude}"
+          'last_location' : "${position.latitude},${position.longitude}",
+          'fcm_token' : fcmToken
         }),
       );
 

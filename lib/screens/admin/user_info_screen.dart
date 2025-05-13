@@ -4,9 +4,9 @@ import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
-import 'package:resq.ai/providers/direction_provider.dart';
-import 'package:resq.ai/providers/geolocator_handler.dart';
-import 'package:resq.ai/widgets/common/alert_dailog.dart';
+import 'package:chatbot_lini/providers/direction_provider.dart';
+import 'package:chatbot_lini/providers/geolocator_handler.dart';
+import 'package:chatbot_lini/widgets/common/alert_dailog.dart';
 import 'dart:convert';
 import '../../../models/user_details_model.dart';
 

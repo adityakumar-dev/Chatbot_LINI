@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:resq.ai/providers/chat_provider.dart';
+import 'package:chatbot_lini/providers/chat_provider.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});

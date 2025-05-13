@@ -8,8 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:resq.ai/config/hive_configs.dart';
-import 'package:resq.ai/providers/sms_service.dart';
+import 'package:chatbot_lini/config/hive_configs.dart';
+import 'package:chatbot_lini/providers/sms_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HealthAssistantHome extends StatefulWidget {

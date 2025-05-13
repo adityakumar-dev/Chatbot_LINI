@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1012145982683",
+    "project_id": "resq-f6c73",
+    "storage_bucket": "resq-f6c73.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012145982683:android:7a130949d9db986e7990fe",
+        "android_client_info": {
+          "package_name": "com.example.chatbot_lini"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDABxxer_FFpXFCEi6YVHf75eZScbanwe4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

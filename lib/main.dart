@@ -1,11 +1,13 @@
+import 'package:chatbot_lini/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
-import 'package:resq.ai/services/api_service.dart';
-import 'package:resq.ai/providers/auth_provider.dart';
-import 'package:resq.ai/providers/chat_provider.dart';
-import 'package:resq.ai/providers/theme_provider.dart';
-import 'package:resq.ai/config/router/app_router.dart';
+import 'package:chatbot_lini/services/api_service.dart';
+import 'package:chatbot_lini/providers/auth_provider.dart';
+import 'package:chatbot_lini/providers/chat_provider.dart';
+import 'package:chatbot_lini/providers/theme_provider.dart';
+import 'package:chatbot_lini/config/router/app_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_fonts/google_fonts.dart';
@@ -16,7 +18,9 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   Hive.initFlutter();
   final apiService = ApiService(http.Client(), prefs);
-  
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(
     MultiProvider(
       providers: [
