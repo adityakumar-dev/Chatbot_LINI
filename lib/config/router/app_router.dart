@@ -6,6 +6,7 @@ import 'package:chatbot_lini/screens/admin_login.dart';
 import 'package:chatbot_lini/screens/admin_register.dart';
 import 'package:chatbot_lini/screens/health_assistant_home.dart';
 import 'package:chatbot_lini/screens/health_chat.dart';
+import 'package:chatbot_lini/screens/questions/question_emergency.dart';
 import 'package:chatbot_lini/screens/report_analyzer.dart';
 import 'package:chatbot_lini/screens/user_help.dart';
 import 'package:chatbot_lini/screens/voice_assistant.dart';
@@ -109,6 +110,14 @@ GoRoute(
   builder: (context, state) {
     final userId = state.extra as int;
     return UserInfoScreen(userId: userId);
+  },
+),
+
+GoRoute(
+  path: '/user-question-emergency',
+  builder: (context, state) {
+    final userId = state.extra as String;
+    return QuestionEmergency(userId: int.parse(userId));
   },
 ),
   ],

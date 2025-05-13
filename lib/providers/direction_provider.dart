@@ -19,24 +19,24 @@ Future<List<LatLng>> fetchRouteFromORS(LatLng start, LatLng end) async {
 
   try {
     print('Fetching route from: $startCoord to $endCoord');
-    final response = await http.get(
+  final response = await http.get(
       url,
-      headers: {
-        'Accept': 'application/geo+json;charset=UTF-8',
-      },
-    );
+    headers: {
+      'Accept': 'application/geo+json;charset=UTF-8',
+    },
+  );
 
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
 
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
+  if (response.statusCode == 200) {
+    final decoded = jsonDecode(response.body);
       
       if (decoded['features'] == null || decoded['features'].isEmpty) {
         throw Exception('No route found between the specified points');
       }
 
-      final coords = decoded['features'][0]['geometry']['coordinates'] as List;
+    final coords = decoded['features'][0]['geometry']['coordinates'] as List;
       // Convert the coordinates to LatLng list
       final List<LatLng> points = [];
       for (var coord in coords) {
@@ -44,7 +44,7 @@ Future<List<LatLng>> fetchRouteFromORS(LatLng start, LatLng end) async {
         points.add(LatLng(coord[1] as double, coord[0] as double));
       }
       return points;
-    } else {
+  } else {
       print('Route API Error Response: ${response.body}');
       throw Exception('Failed to fetch route: ${response.statusCode}');
     }

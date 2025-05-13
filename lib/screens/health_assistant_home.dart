@@ -173,11 +173,9 @@ class _HealthAssistantHomeState extends State<HealthAssistantHome> {
             },
           ),
           IconButton(
-            icon: Icon(Icons.logout, color: !isDarkMode ? Colors.white : Colors.black),
-            onPressed: () async {
-              SharedPreferences preferences = await SharedPreferences.getInstance();
-              preferences.clear();
-              context.push('/login');
+            icon: Icon(Icons.settings, color: !isDarkMode ? Colors.white : Colors.black),
+            onPressed: () {
+              context.push('/settings');
             },
           ),
         ],

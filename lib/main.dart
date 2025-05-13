@@ -1,3 +1,4 @@
+import 'package:chatbot_lini/config/firebase/firebase_functions.dart';
 import 'package:chatbot_lini/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -18,9 +19,13 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   Hive.initFlutter();
   final apiService = ApiService(http.Client(), prefs);
+  
+  // Initialize Firebase and notifications
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await FirebaseFunctions.initialize();
+  
   runApp(
     MultiProvider(
       providers: [
