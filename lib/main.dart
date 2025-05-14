@@ -1,5 +1,6 @@
 import 'package:chatbot_lini/config/firebase/firebase_functions.dart';
 import 'package:chatbot_lini/firebase_options.dart';
+import 'package:chatbot_lini/providers/location_checker_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -37,6 +38,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => ChatProvider(apiService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => LocationCheckerProvider(),
         ),
       ],
       child: const MyApp(),

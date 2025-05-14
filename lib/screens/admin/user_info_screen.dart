@@ -21,6 +21,7 @@ class UserInfoScreen extends StatefulWidget {
 class _UserInfoScreenState extends State<UserInfoScreen> {
   UserDetailsModel? userDetails;
   bool isLoading = true;
+  MapController controller = MapController();
   String? error;
   LatLng? userLocation;
   LatLng? adminPosition;
@@ -346,6 +347,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         child: Stack(
           children: [
             FlutterMap(
+              mapController: controller,
               options: MapOptions(
                 center: userLocation,
                 zoom: 13.0,
@@ -443,7 +445,20 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                   ],
                 ),
               ],
+
             ),
+
+            Positioned(
+              top: 16, right: 16,
+              child: GestureDetector(
+                onTap: (){
+                  controller.move(adminPosition!, 13.0);
+                },
+                child: Container(
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+                child: Icon(Icons.center_focus_strong, color: Colors.black,),
+                            ),
+              )),
             if (isRouteLoading)
               const Positioned.fill(
                 child: Center(

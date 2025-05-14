@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:another_telephony/telephony.dart';
+import 'package:chatbot_lini/config/services/location_service.dart';
+import 'package:chatbot_lini/providers/location_checker_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:chatbot_lini/config/hive_configs.dart';
 import 'package:chatbot_lini/providers/sms_service.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HealthAssistantHome extends StatefulWidget {
@@ -152,6 +155,7 @@ class _HealthAssistantHomeState extends State<HealthAssistantHome> {
 
   @override
   Widget build(BuildContext context) {
+    final locationCheckerProvider = Provider.of<LocationCheckerProvider>(context);
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final width = MediaQuery.of(context).size.width;
@@ -167,13 +171,7 @@ class _HealthAssistantHomeState extends State<HealthAssistantHome> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.contact_emergency_outlined, color: !isDarkMode ? Colors.white : Colors.black),
-            onPressed: () {
-              context.push('/contacts');
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.settings, color: !isDarkMode ? Colors.white : Colors.black),
+            icon: Icon(Icons.settings  , color: !isDarkMode ? Colors.white : Colors.black),
             onPressed: () {
               context.push('/settings');
             },
@@ -186,15 +184,159 @@ class _HealthAssistantHomeState extends State<HealthAssistantHome> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Emergency Assistance",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black,
-                ),
+
+              // Text(
+              //   "Emergency Assistance",
+              //   style: TextStyle(
+              //     fontSize: 22,
+              //     fontWeight: FontWeight.bold,
+              //     color: isDarkMode ? Colors.white : Colors.black,
+              //   ),
+              // ),
+Container(
+  // margin: const EdgeInsets.symmetric(vertical: 16),
+  child: Column(
+    children: [
+      Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: InkWell(
+          onTap: () async {
+            if(locationCheckerProvider.isLocationServiceRunning){
+              locationCheckerProvider.updateLocationServiceStatus(false);
+              LocationService.stopLocationService();
+            } else {
+              // Get user ID from SharedPreferences
+              final prefs = await SharedPreferences.getInstance();
+              final userId = prefs.get('user_id').toString();
+              
+              if (userId == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Please login first to use location service"),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
+              
+              locationCheckerProvider.updateLocationServiceStatus(true);
+              await LocationService.startLocationService(userId);
+            }
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: locationCheckerProvider.isLocationServiceRunning
+                    ? [Colors.red.shade400, Colors.red.shade600]
+                    : [Colors.blue.shade400, Colors.blue.shade600],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(height: 20),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        locationCheckerProvider.isLocationServiceRunning
+                            ? Icons.location_on
+                            : Icons.location_off,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            locationCheckerProvider.isLocationServiceRunning
+                                ? "Stop Tracking"
+                                : "Track Me",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            locationCheckerProvider.isLocationServiceRunning
+                                ? "Location service is active and updating every minute"
+                                : "Enable location tracking for emergency assistance",
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        locationCheckerProvider.isLocationServiceRunning
+                            ? Icons.stop_circle
+                            : Icons.play_circle,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ],
+                ),
+                if (locationCheckerProvider.isLocationServiceRunning) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.timer,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          "Updates every minute",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    ],
+  ),
+),
               _UrgencyCard(
                 title: "Emergency",
                 color: Colors.redAccent,

@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 <uses-permission android:name="android.permission.INTERNET" /> 
 <uses-permission android:name="android.permission.RECORD_AUDIO" />
 <uses-permission android:name="android.permission.CALL_PHONE" />
@@ -10,6 +11,11 @@
 <uses-permission android:name="android.permission.READ_SMS" />
 <uses-permission android:name="android.permission.WRITE_SMS" />
 <uses-permission android:name="android.permission-group.SMS" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:label="chatbot_lini"
@@ -42,7 +48,28 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+ 
+    <service
+    android:name="id.flutter.flutter_background_service.BackgroundService"
+    android:exported="false"
+    android:permission="android.permission.BIND_JOB_SERVICE"
+    tools:replace="android:exported"/>
+
+
+<receiver android:enabled="true" android:exported="false" android:name="com.ekasetiawans.flutter_background_service.StartedBroadcastReceiver">
+    <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.REBOOT"/>
+    </intent-filter>
+</receiver>
+
+    <!-- Notification Channel for Background Service -->
+    <meta-data
+        android:name="com.google.firebase.messaging.default_notification_channel_id"
+        android:value="location_updates" />
     </application>
+ 
+
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
          https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
