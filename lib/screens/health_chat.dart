@@ -24,7 +24,7 @@ class _HealthChatScreenState extends State<HealthChatScreen> {
 
   Future<void> _sendPrompt(String prompt) async {
     final uri = Uri.parse(
-        'https://enabled-flowing-bedbug.ngrok-free.app/api/${widget.isAccident ?"road-safety" : "health"}?prompt=${Uri.encodeComponent(prompt)}');
+        'https://enabled-flowing-bedbug.ngrok-free.app/api/${widget.isAccident ?"road-safety" : "health"}?query=${Uri.encodeComponent(prompt)}');
 
     final request = http.Request("GET", uri);
 

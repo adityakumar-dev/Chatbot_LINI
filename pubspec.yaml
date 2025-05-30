@@ -45,7 +45,7 @@ dependencies:
   flutter_markdown: ^0.6.18
   google_fonts: ^6.1.0
   flutter_svg: ^2.0.9
-  lottie: ^2.7.0
+  lottie: ^3.3.1
   flutter_animate: ^4.5.0
   
   # Storage
@@ -70,6 +70,7 @@ dependencies:
   flutter_sound: ^9.28.0
   audioplayers: ^6.4.0
   http_parser: ^4.1.2
+  app_settings: ^5.1.1
   
   # Maps
   flutter_map: ^6.1.0
@@ -109,6 +110,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/intro/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1,16 +1,18 @@
+import 'package:chatbot_lini/screens/Intro/app_intro.dart';
+import 'package:chatbot_lini/screens/admin/admin_register.dart';
 import 'package:chatbot_lini/screens/admin/user_info_screen.dart';
-import 'package:chatbot_lini/screens/complete_emergency.dart';
+import 'package:chatbot_lini/screens/admin/complete_emergency.dart';
+import 'package:chatbot_lini/screens/chatbot/chat_history_screen.dart';
+import 'package:chatbot_lini/screens/chatbot/user_chatbot_screen.dart';
 import 'package:chatbot_lini/screens/contact_screens.dart';
-import 'package:chatbot_lini/screens/emergency_respond.dart';
-import 'package:chatbot_lini/screens/admin_login.dart';
-import 'package:chatbot_lini/screens/admin_register.dart';
+import 'package:chatbot_lini/screens/admin/emergency_respond.dart';
+import 'package:chatbot_lini/screens/admin/admin_login.dart';
 import 'package:chatbot_lini/screens/health_assistant_home.dart';
 import 'package:chatbot_lini/screens/health_chat.dart';
 import 'package:chatbot_lini/screens/questions/question_emergency.dart';
 import 'package:chatbot_lini/screens/report_analyzer.dart';
 import 'package:chatbot_lini/screens/user_help.dart';
 import 'package:chatbot_lini/screens/voice_assistant.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chatbot_lini/screens/splash_screen.dart';
 import 'package:chatbot_lini/screens/auth/login_screen.dart';
@@ -119,6 +121,18 @@ GoRoute(
     final userId = state.extra as String;
     return QuestionEmergency(userId: int.parse(userId));
   },
+),
+GoRoute(
+  path: '/intro',
+  builder: (context, state) => const AppIntro(),
+),
+GoRoute(
+  path: '/chat-history',
+  builder: (context, state) => ChatHistoryScreen(),
+),
+GoRoute(
+  path: '/user-chat',
+  builder: (context, state) => UserChatScreen(),
 ),
   ],
 ); 

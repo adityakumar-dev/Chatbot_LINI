@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:chatbot_lini/models/chat_history.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,17 +38,43 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        
         if (data['status'] == 'success') {
-          await _prefs.setInt(_userIdKey, data['user_id']);
-          // await _prefs.setString(_tokenKey, data['token']);
+        
+//         {
+// 	"status": "success",
+// 	"access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJub29iIiwidXNlcl9pZCI6MSwiZXhwIjoxNzQ4NTg5MzI0fQ.zbSFmsdqUwtqwKdM-OHMmwPdh6XsdowKanCS6iQKpy0",
+// 	"token_type": "bearer",
+// 	"user_id": 1,
+// 	"user": {
+// 		"last_location": null,
+// 		"username": "noob",
+// 		"name": "noob",
+// 		"speciality": null,
+// 		"fcm_token": null,
+// 		"need_help": false,
+// 		"created_at": "2025-05-30T04:20:59.096944",
+// 		"emergency_contacts": null,
+// 		"contact": "123",
+// 		"last_location_updated_at": "2025-05-30T06:45:24.448297",
+// 		"address": null,
+// 		"password": "noob",
+// 		"is_track_me": false,
+// 		"id": 1,
+// 		"required_needs": null
+// 	}
+// }
+        
+          await _prefs.setString(_userIdKey, data['user_id'].toString());
+          await _prefs.setString(_tokenKey, data['access_token']);
           await _prefs.setString('username', username);
           await _prefs.setString('name', data['user']['name']);
           await _prefs.setString('role', "user");
           await _prefs.setString('phone', data['user']['contact']);
-          await _prefs.setString('location', "${position.latitude},${position.longitude}");
-          await _prefs.setString('speciality', data['user']['speciality']);
-          await _prefs.setString('address', data['user']['address']);
-          await _prefs.setString('required_needs', data['user']['required_needs']);
+          await _prefs.setString('location', "${position.latitude},${position.longitude}" ?? '');
+          await _prefs.setString('speciality', data['user']['speciality'] ?? '');
+          await _prefs.setString('address', data['user']['address'] ?? '');
+          await _prefs.setString('required_needs', data['user']['required_needs'] ?? '');
           return {
             'success': true,
             'message': 'Login successful!',
@@ -89,7 +117,7 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success') {
-          await _prefs.setInt(_userIdKey, data['user_id']);
+          await _prefs.setString(_userIdKey, data['user_id'].toString());
           await _prefs.setString('username', username);
           await _prefs.setString('password', password);
           await _prefs.setString('name', name);
@@ -148,7 +176,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> sendMessage(String message, {bool isSearch = false, int? conversationId}) async {
     try {
-      final userId = _prefs.getInt(_userIdKey);
+      final userId = _prefs.getString(_userIdKey);
       if (userId == null) {
         throw Exception('User ID not found');
       }
@@ -222,7 +250,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> getChatHistory() async {
     try {
-      final userId = _prefs.getInt(_userIdKey);
+      final userId = _prefs.getString(_userIdKey);
       if (userId == null) {
         throw Exception('User ID not found');
       }
@@ -241,4 +269,64 @@ class ApiService {
       throw Exception('Failed to get chat history: $e');
     }
   }
+
+  Future<List<historyModel>> fetchHistory(BuildContext context) async {
+    try {
+      final userId = _prefs.getString(_userIdKey).toString();
+      if (userId == null) {
+        throw Exception('User ID not found');
+      }
+
+      final response = await _client.get(
+        Uri.parse('$_baseUrl/chat/history/user/$userId/'),
+        headers: _headers,
+      );
+
+      if (response.statusCode == 200) {
+
+//         [
+// 	{
+// 		"conversation_id": 2,
+// 		"created_at": "2025-05-30T10:07:54.741438",
+// 		"title": "hi"
+// 	},
+// 	{
+// 		"conversation_id": 1,
+// 		"created_at": "2025-05-30T09:51:09.147586",
+// 		"title": "my name ?"
+// 	}
+// ]
+  final data = jsonDecode(response.body);
+  List<historyModel> history = [];
+  for (var e in data) {
+    history.add(historyModel(conversation_id: e['conversation_id'], created_at: DateTime.parse(e['created_at']), title: e['title']));
+  }
+  return history;
+
+        // return jsonDecode(response.body).map((e) => historyModel.fromJson(e)).toList();
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.body)));
+      throw Exception('Failed to fetch history');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      throw Exception('Failed to fetch history: $e');
+    }
+
+  }
+
+  Future<List<dynamic>> fetchChat(String conversationId) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$_baseUrl/chat/history/conversation/$conversationId'),
+        headers: _headers,
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception('Failed to fetch chat');
+    } catch (e) {
+      throw Exception('Failed to fetch chat: $e');
+    }
+  }
+
 }

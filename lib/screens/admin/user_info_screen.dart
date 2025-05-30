@@ -121,15 +121,15 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     }
 
     try {
-      setState(() {
-        isRouteLoading = true;
-      });
+      // setState(() {
+      //   isRouteLoading = true;
+      // });
       
-      routeCoordinates = await fetchRouteFromORS(userLocation!, adminPosition!);
+      // routeCoordinates = await fetchRouteFromORS(userLocation!, adminPosition!);
       
-      setState(() {
-        isRouteLoading = false;
-      });
+      // setState(() {
+      //   isRouteLoading = false;
+      // });
     } catch(e) {
       setState(() {
         isRouteLoading = false;

@@ -1,19 +1,15 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:another_telephony/telephony.dart';
-import 'package:chatbot_lini/config/services/location_service.dart';
-import 'package:chatbot_lini/providers/location_checker_provider.dart';
+import 'package:chatbot_lini/config/hive_configs.dart';
+import 'package:chatbot_lini/providers/sms_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:chatbot_lini/config/hive_configs.dart';
-import 'package:chatbot_lini/providers/sms_service.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:chatbot_lini/providers/location_checker_provider.dart';
+import 'package:chatbot_lini/config/services/location_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app_settings/app_settings.dart';
 
 class HealthAssistantHome extends StatefulWidget {
   const HealthAssistantHome({super.key});
@@ -23,571 +19,90 @@ class HealthAssistantHome extends StatefulWidget {
 }
 
 class _HealthAssistantHomeState extends State<HealthAssistantHome> {
-  File? _image;
-  final ImagePicker _picker = ImagePicker();
-  String _chatbotResponse = "";
-  bool _isLoading = false;
-
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        _image = File(image.path);
-      });
-    }
-  }
-
-  Future<void> _uploadImageAndGetResponse() async {
-    if (_image == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select an image first.")),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _chatbotResponse = "";
-    });
-
-    try {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://enabled-flowing-bedbug.ngrok-free.app/api/chatbot'),
-      );
-      request.files.add(await http.MultipartFile.fromPath('image', _image!.path));
-
-      final response = await request.send();
-      final responseBody = await response.stream.bytesToString();
-      final data = json.decode(responseBody);
-
-      setState(() {
-        _chatbotResponse = data['response'] ?? "No response received.";
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _chatbotResponse = "Error: $e";
-        _isLoading = false;
-      });
-    }
-  }
-
-
-  Future<void> handleCall(String number) async {
-    if (await Permission.phone.isDenied) {
-      await Permission.phone.request();
-    } else if (await Permission.phone.isPermanentlyDenied) {
-      await openAppSettings();
-    } else if (await Permission.phone.isGranted) {
-      await FlutterPhoneDirectCaller.callNumber(number);
-    }
-  }
-
-  Future<Position> getCurrentPosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission != LocationPermission.whileInUse && permission != LocationPermission.always) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error('Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-  }
-
-  Future<void> sendEmergencyAlerts(BuildContext context, Position position) async {
-    final List<Map<String, String>> contacts = await HiveConfigs.getContactsData('contacts');
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    String alertMessageString(String name, String contactName) =>
-        "Emergency Alert $contactName! Please assist. I'm $name. "
-        "Currently at location ${position.latitude},${position.longitude}. "
-        "View me on Map: https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}";
-
-    PermissionStatus permission = await Permission.sms.request();
-    if (permission.isDenied || permission.isPermanentlyDenied) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("SMS permission denied."),
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    String senderName = prefs.getString('name') ?? 'Someone in need';
-
-    for (var contact in contacts) {
-      final String phone = contact['phone'] ?? contact['contact'] ?? '';
-      final String name = contact['name'] ?? '';
-      if (phone.isNotEmpty) {
-        await SmsService.sendSMS(
-          phone,
-          alertMessageString(senderName, name),
-          onResult: (success, message) {
-            if (success) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(message)),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(message)),
-              );
-            }
-          },
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final locationCheckerProvider = Provider.of<LocationCheckerProvider>(context);
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
-    final width = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? Colors.black : Colors.white,
+      backgroundColor: isDarkMode ? Colors.grey[900] : Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: isDarkMode ? Colors.black : theme.primaryColor,
+        backgroundColor: isDarkMode ? Colors.black : colors.primary,
         elevation: 0,
         title: Text(
           'ResQ.Ai',
-          style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+          style: TextStyle(
+            color: isDarkMode ? colors.primary : Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.settings  , color: !isDarkMode ? Colors.white : Colors.black),
-            onPressed: () {
-              context.push('/settings');
-            },
+            icon: Icon(Icons.settings, color: isDarkMode ? colors.primary : Colors.white),
+            onPressed: () => context.push('/settings'),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-
-              // Text(
-              //   "Emergency Assistance",
-              //   style: TextStyle(
-              //     fontSize: 22,
-              //     fontWeight: FontWeight.bold,
-              //     color: isDarkMode ? Colors.white : Colors.black,
-              //   ),
-              // ),
-Container(
-  // margin: const EdgeInsets.symmetric(vertical: 16),
-  child: Column(
-    children: [
-      Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: InkWell(
-          onTap: () async {
-            if(locationCheckerProvider.isLocationServiceRunning){
-              locationCheckerProvider.updateLocationServiceStatus(false);
-              LocationService.stopLocationService();
-            } else {
-              // Get user ID from SharedPreferences
-              final prefs = await SharedPreferences.getInstance();
-              final userId = prefs.get('user_id').toString();
-              
-              if (userId == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Please login first to use location service"),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                return;
-              }
-              
-              locationCheckerProvider.updateLocationServiceStatus(true);
-              await LocationService.startLocationService(userId);
-            }
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                colors: locationCheckerProvider.isLocationServiceRunning
-                    ? [Colors.red.shade400, Colors.red.shade600]
-                    : [Colors.blue.shade400, Colors.blue.shade600],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Location Tracking Card
+            _LocationTrackingCard(
+              isActive: locationCheckerProvider.isLocationServiceRunning,
+              onToggle: () async {
+                if (locationCheckerProvider.isLocationServiceRunning) {
+                  locationCheckerProvider.updateLocationServiceStatus(false);
+                  LocationService.stopLocationService();
+                } else {
+                  final prefs = await SharedPreferences.getInstance();
+                  final userId = prefs.get('user_id').toString();
+                  if (userId.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please login first to use location service"),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+                  locationCheckerProvider.updateLocationServiceStatus(true);
+                  await LocationService.startLocationService(userId);
+                }
+              },
             ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        locationCheckerProvider.isLocationServiceRunning
-                            ? Icons.location_on
-                            : Icons.location_off,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            locationCheckerProvider.isLocationServiceRunning
-                                ? "Stop Tracking"
-                                : "Track Me",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            locationCheckerProvider.isLocationServiceRunning
-                                ? "Location service is active and updating every minute"
-                                : "Enable location tracking for emergency assistance",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        locationCheckerProvider.isLocationServiceRunning
-                            ? Icons.stop_circle
-                            : Icons.play_circle,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ],
-                ),
-                if (locationCheckerProvider.isLocationServiceRunning) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.timer,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          "Updates every minute",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    ],
-  ),
-),
-              _UrgencyCard(
-                title: "Emergency",
-                color: Colors.redAccent,
-                icon: Icons.warning,
-                onTap: () {},
-                content: Column(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        context.push('/emergency-contacts');
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            Expanded(child: Text("View All Official Helpline Numbers", style: TextStyle(color: Colors.red))),
-                            SizedBox(width: 10),
-                            Icon(Icons.arrow_forward_ios, color: Colors.red)
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Flexible(
-                          child: _EmergencyDialButton(
-                            label: "Ambulance",
-                            icon: Icons.local_hospital,
-                            text: "108",
-                            onTap: () async {
-                              handleCall("108");
-                            },
-                          ),
-                        ),
-                        Flexible(
-                          child: _EmergencyDialButton(
-                            label: "Police",
-                            icon: Icons.local_police,
-                            text: "100",
-                            onTap: () async {
-                              await handleCall("100");
-                            },
-                          ),
-                        ),
-                        Flexible(
-                          child: _EmergencyDialButton(
-                            label: "Fire",
-                            icon: Icons.fire_truck,
-                            text: "101",
-                            onTap: () async {
-                              await handleCall("101");
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.warning),
-                      label: Text("Send Emergency Alert"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        minimumSize: Size.fromHeight(50),
-                      ),
-                      onPressed: () async {
-                        Position position = await getCurrentPosition();
-                        sendEmergencyAlerts(context, position);
-                      },
-                    ),
-                    SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          context.push('/user-help');
-                        },
-                        child: Text("Ask for help", style: TextStyle(color: Colors.red)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red.withOpacity(0.1),
-                          side: BorderSide(color: Colors.white),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              _UrgencyCard(
-                title: "First Emergency Support",
-                color: Colors.purpleAccent,
-                icon: Icons.support_agent,
-                onTap: () {},
-                content: Column(
-                  children: [
-                    Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: InkWell(
-                        onTap: () {
-                          context.push('/emergency-support/women-safety');
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Icon(Icons.woman, color: Colors.purpleAccent),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text("Women Safety", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                    Text("Get immediate assistance for women's safety issues.", style: TextStyle(color: Colors.grey)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: InkWell(
-                        onTap: () {
-                          context.push('/emergency-support/medical-support');
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Icon(Icons.local_hospital, color: Colors.purpleAccent),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text("Road Accident / Medical Support", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                    Text("Get help for road accidents and medical emergencies.", style: TextStyle(color: Colors.grey)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: InkWell(
-                        onTap: () {
-                          context.push('/emergency-support/police-support');
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Icon(Icons.local_police, color: Colors.purpleAccent),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text("Police Support", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                    Text("Get immediate assistance from the police.", style: TextStyle(color: Colors.grey)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              _UrgencyCard(
-                title: "FAQ (Critical & Accident)",
-                color: Colors.orangeAccent,
-                icon: Icons.info_outline,
-                onTap: () {},
-                content: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      ...["Chest Pain", "Breathing Issue", "Seizure", "High Fever", "Road Accident", "Burn Injury", "Bleeding or Cuts", "Animal Bite or Sting", "Women Safety Help", "Medical Help", "Fireman Help"].map((label) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: _CriticalOption(label: label, isAccident: false),
-                      )),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: (){
-                                    context.push('/report-scan');
+            const SizedBox(height: 24),
 
-                },
-                child: _UrgencyCard(
-                  title: "Chatbot (Scan Your Report)",
-                  color: Colors.blueAccent,
-                  icon: Icons.chat,
-                  onTap: () {
-                  },
-                  content: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("Scan Your Reports....", style: TextStyle(color: Colors.black,),),
-                      Icon(Icons.arrow_back_ios_new_outlined, color: Colors.black,)  // SizedBox(width: 10,)
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            // Emergency Section
+            _EmergencySection(),
+
+            // Support Services
+            _SupportServicesSection(),
+
+            // FAQ Section
+            _FaqSection(),
+
+            // Report Scanner
+            _ReportScannerSection(),
+          ],
         ),
       ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           FloatingActionButton(
-            heroTag: "chatAssistant",
-            onPressed: () {
-              context.push('/chat');
-            },
-            backgroundColor: Colors.blueAccent,
+            heroTag: "chat",
+            onPressed: () => context.push('/chat-history'),
+            backgroundColor: colors.primary,
             child: const Icon(Icons.chat, color: Colors.white),
           ),
           const SizedBox(height: 16),
           FloatingActionButton(
-            heroTag: "voiceAssistant",
-            onPressed: () {
-              context.push('/voice');
-            },
-            backgroundColor: Colors.greenAccent,
+            heroTag: "voice",
+            onPressed: () => context.push('/voice'),
+            backgroundColor: colors.secondary,
             child: const Icon(Icons.mic, color: Colors.white),
           ),
         ],
@@ -596,52 +111,502 @@ Container(
   }
 }
 
-class _UrgencyCard extends StatelessWidget {
-  final String title;
-  final Color color;
-  final IconData icon;
-  final Widget content;
-  final VoidCallback onTap;
+class _LocationTrackingCard extends StatelessWidget {
+  final bool isActive;
+  final VoidCallback onToggle;
 
-  const _UrgencyCard({
-    required this.title,
-    required this.color,
-    required this.icon,
-    required this.content,
-    required this.onTap,
+  const _LocationTrackingCard({
+    required this.isActive,
+    required this.onToggle,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
+    final colors = theme.colorScheme;
 
     return Card(
-      color: isDarkMode ? color.withOpacity(0.2) : color.withOpacity(0.1),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: isActive
+                  ? [Colors.red.shade400, Colors.red.shade600]
+                  : [colors.primary, colors.primary.withOpacity(0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      isActive ? Icons.location_on : Icons.location_off,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isActive ? "Location Tracking Active" : "Enable Location Tracking",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          isActive
+                              ? "Your location is being shared with emergency contacts"
+                              : "Enable to share your location during emergencies",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      isActive ? Icons.toggle_on : Icons.toggle_off,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ],
+              ),
+              if (isActive) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.timer, color: Colors.white, size: 16),
+                      SizedBox(width: 4),
+                      Text(
+                        "Updates every minute",
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmergencySection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icon, color: color),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                Icon(Icons.warning, color: colors.error),
+                const SizedBox(width: 8),
+                Text(
+                  "Emergency Assistance",
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.error,
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            _EmergencyOptionCard(
+              title: "Emergency Helplines",
+              icon: Icons.contacts,
+              color: colors.error,
+              onTap: () => context.push('/emergency-contacts'),
+            ),
             const SizedBox(height: 12),
-            content,
+            Row(
+              children: [
+                Expanded(
+                  child: _EmergencyQuickAction(
+                    icon: Icons.local_hospital,
+                    label: "Ambulance",
+                    number: "108",
+                    color: colors.error,
+                    onTap: () => _callNumber("108"),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _EmergencyQuickAction(
+                    icon: Icons.local_police,
+                    label: "Police",
+                    number: "100",
+                    color: colors.primary,
+                    onTap: () => _callNumber("100"),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _EmergencyQuickAction(
+                    icon: Icons.fire_truck,
+                    label: "Fire",
+                    number: "101",
+                    color: Colors.orange,
+                    onTap: () => _callNumber("101"),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.warning),
+                label: const Text("SEND EMERGENCY ALERT"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.error,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () async {
+                 await Geolocator.requestPermission();
+                  await Geolocator.isLocationServiceEnabled();
+                  if(await Geolocator.isLocationServiceEnabled()){
+                  
+                    final position = await Geolocator.getCurrentPosition();
+                    sendEmergencyAlerts(context, position);
+                  }else{
+                  
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Location service is not enabled")),
+                    );
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => context.push('/user-help'),
+              child: Text(
+                "Need help? Contact Organization",
+                style: TextStyle(color: colors.error),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _callNumber(String number) async {
+    // Implement call functionality
+    FlutterPhoneDirectCaller.callNumber(number);
+  }
+
+ 
+  Future<void> sendEmergencyAlerts(BuildContext context, Position position) async {
+    try {
+      final List<Map<String, String>> contacts = await HiveConfigs.getContactsData('contacts');
+      if (contacts.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("No emergency contacts found. Please add contacts first."),
+          duration: Duration(seconds: 3),
+        ));
+        return;
+      }
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String senderName = prefs.getString('name') ?? 'Someone in need';
+
+      // Check SMS permission status
+      PermissionStatus permission = await Permission.sms.status;
+      if (permission.isDenied) {
+        permission = await Permission.sms.request();
+      }
+
+      if (permission.isPermanentlyDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("SMS permission is permanently denied. Please enable it in settings."),
+          duration: Duration(seconds: 3),
+        ));
+        await openAppSettings();
+        return;
+      }
+
+      if (!permission.isGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("SMS permission is required to send emergency alerts."),
+          duration: Duration(seconds: 3),
+        ));
+        return;
+      }
+
+      String alertMessageString(String name, String contactName) =>
+        "Emergency Alert $contactName! Please assist. I'm $name. "
+        "Currently at location ${position.latitude},${position.longitude}. "
+        "View me on Map: https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}";
+
+      int successCount = 0;
+      List<String> failedContacts = [];
+
+      for (var contact in contacts) {
+        final String phone = contact['phone'] ?? contact['contact'] ?? '';
+        final String name = contact['name'] ?? '';
+        
+        if (phone.isNotEmpty) {
+          try {
+            await SmsService.sendSMS(
+              phone,
+              alertMessageString(senderName, name),
+              onResult: (success, message) {
+                if (success) {
+                  successCount++;
+                } else {
+                  failedContacts.add(name);
+                }
+              },
+            );
+          } catch (e) {
+            failedContacts.add(name);
+          }
+        }
+      }
+
+      // Show final status
+      if (successCount > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Emergency alerts sent to $successCount contact(s)"),
+          duration: const Duration(seconds: 3),
+        ));
+      }
+      
+      if (failedContacts.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Failed to send alerts to: ${failedContacts.join(", ")}"),
+          duration: const Duration(seconds: 3),
+        ));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Error sending emergency alerts: $e"),
+        duration: const Duration(seconds: 3),
+      ));
+    }
+  }
+}
+
+class _EmergencyOptionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _EmergencyOptionCard({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: color.withOpacity(0.2)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(icon, color: color),
+              const SizedBox(width: 16),
+              Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w500))),
+              Icon(Icons.chevron_right, color: color),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmergencyQuickAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String number;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _EmergencyQuickAction({
+    required this.icon,
+    required this.label,
+    required this.number,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withOpacity(0.1),
+                radius: 24,
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                number,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SupportServicesSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colors.secondary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.support_agent, color: colors.secondary),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "Support Services",
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.secondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 0.70,
+              children: [
+                _SupportServiceCard(
+                  icon: Icons.woman,
+                  title: "Women Safety",
+                  description: "Immediate assistance for women's safety",
+                  color: Colors.purple,
+                  onTap: () => context.push('/emergency-support/women-safety'),
+                ),
+                _SupportServiceCard(
+                  icon: Icons.local_hospital,
+                  title: "Medical Support",
+                  description: "Help for medical emergencies",
+                  color: Colors.red,
+                  onTap: () => context.push('/emergency-support/medical-support'),
+                ),
+                _SupportServiceCard(
+                  icon: Icons.local_police,
+                  title: "Police Support",
+                  description: "Immediate police assistance",
+                  color: Colors.blue,
+                  onTap: () => context.push('/emergency-support/police-support'),
+                ),
+                _SupportServiceCard(
+                  icon: Icons.psychology,
+                  title: "Mental Health",
+                  description: "Professional mental health support",
+                  color: Colors.green,
+                  onTap: () => context.push('/emergency-support/mental-health'),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -649,60 +614,203 @@ class _UrgencyCard extends StatelessWidget {
   }
 }
 
-class _EmergencyDialButton extends StatelessWidget {
-  final String label;
+class _SupportServiceCard extends StatelessWidget {
   final IconData icon;
+  final String title;
+  final String description;
+  final Color color;
   final VoidCallback onTap;
-  final String text;
 
-  const _EmergencyDialButton({required this.label, required this.icon, required this.text, required this.onTap});
+  const _SupportServiceCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          CircleAvatar(
-            backgroundColor: isDarkMode ? Colors.white : Colors.redAccent.withOpacity(0.1),
-            radius: 25,
-            child: Icon(icon, color: Colors.redAccent),
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                color.withOpacity(0.2),
+                color.withOpacity(0.05),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
           ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black87),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                description,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-          Text(text, style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black87))
-        ],
+        ),
       ),
     );
   }
 }
 
-class _CriticalOption extends StatelessWidget {
-  final String label;
-  final bool isAccident;
+class _FaqSection extends StatelessWidget {
+  final List<String> faqItems = const [
+    "Chest Pain",
+    "Breathing Issue",
+    "Seizure",
+    "High Fever",
+    "Road Accident",
+   
+  ];
 
-  const _CriticalOption({required this.label, required this.isAccident});
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.help_outline, color: colors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  "Emergency FAQs",
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: faqItems.map((item) => _FaqChip(item: item)).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FaqChip extends StatelessWidget {
+  final String item;
+
+  const _FaqChip({required this.item});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    return GestureDetector(
-      onTap: () {
-        context.push('/health-chat', extra: [label, isAccident]);
-      },
-      child: Chip(
-        backgroundColor: isDarkMode ? Colors.white12 : Colors.grey[200],
-        label: Text(
-          label,
-          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+    return ActionChip(
+      avatar: Icon(Icons.question_answer, size: 18, color: theme.colorScheme.primary),
+      label: Text(item),
+      backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+      labelStyle: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+      onPressed: () => context.push('/health-chat', extra: [item, false]),
+    );
+  }
+}
+
+class _ReportScannerSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: () => context.push('/report-scan'),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.document_scanner, color: colors.primary, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Medical Report Scanner",
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Scan your medical reports for analysis",
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: colors.primary),
+            ],
+          ),
         ),
       ),
     );

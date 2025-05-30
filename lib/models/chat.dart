@@ -1,55 +1,22 @@
-import 'package:uuid/uuid.dart';
+import 'package:chatbot_lini/models/message.dart';
 
-class Chat {
-  final String id;
+class Chat{
+   String conversationId = '-1';
   final String title;
   final DateTime createdAt;
-  final DateTime updatedAt;
-  final bool isPinned;
+  final List<ChatMessage> messages = [];
 
   Chat({
-    String? id,
+    required this.conversationId,
     required this.title,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    this.isPinned = false,
-  })  : id = id ?? const Uuid().v4(),
-        createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+    required this.createdAt,
+  });
 
-  Chat copyWith({
-    String? id,
-    String? title,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    bool? isPinned,
-  }) {
-    return Chat(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      isPinned: isPinned ?? this.isPinned,
-    );
+  void addMessage(ChatMessage message){
+    messages.add(message);
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-      'isPinned': isPinned,
-    };
+  void deleteMessage(ChatMessage message){
+    messages.remove(message);
   }
-
-  factory Chat.fromJson(Map<String, dynamic> json) {
-    return Chat(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-      isPinned: json['isPinned'] as bool,
-    );
-  }
-} 
+}

@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('user_id');
+    final userId = prefs.getString('user_id');
     final role = prefs.getString('role');
     if (role != null) {
       debugPrint("User ID: $userId");
@@ -39,8 +39,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
       }
     } else {
+      if(prefs.getBool('is_first_time') == false || prefs.getBool('is_first_time') == null){
+        context.go('/intro');
+      }else{
+        context.go('/login');
+      }
       // context.go('/login');
-      context.go('/login');
+      // context.go('/login');
     }
   }
 
